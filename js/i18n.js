@@ -5,7 +5,7 @@
     ar: {
       'f.client': 'Client', 'cl.members': 'الفريق على العميل', 'cl.manage': 'اختار الفريق', 'cl.tasks': 'Tasks', 'cl.addtask': 'ضيف Task', 'cl.nomem': 'لسه محدش متعيّن.', 'cl.notask': 'مفيش Tasks لسه.', 'team.of': 'التيم', 'team.production': 'الإنتاج', 'team.editing': 'المونتاج', 'team.design': 'التصميم', 'team.social': 'السوشيال ميديا', 'team.none': 'من غير تيم', 'prof.clients': 'Clients', 'cal.h': 'مين في إجازة', 'cal.none': 'محدش في إجازة اليوم ده.', 'cal.pending': 'مستني', 'cl.people': 'أفراد', 'cl.open': 'مفتوحة', 'cl.done': 'خلصت', 'none.client': 'من غير عميل',
       app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'ثانية واحدة…',
-      'auth.in': 'Login', 'auth.up': 'حساب جديد', 'auth.email': 'الإيميل', 'auth.pw': 'كلمة السر', 'auth.name': 'اسمك',
+      'auth.in': 'دخول', 'auth.up': 'حساب جديد', 'auth.email': 'الإيميل', 'auth.pw': 'كلمة السر', 'auth.name': 'اسمك',
       'auth.go.in': 'ادخل', 'auth.go.up': 'اعمل حساب', 'auth.demo': 'جرّب النسخة التجريبية', 'auth.hint.up': 'أول حساب بيبقى أدمن.',
       'auth.bad': 'الإيميل أو كلمة السر غلط.', 'auth.exists': 'الإيميل ده مسجّل قبل كده.', 'auth.confirm': 'اتبعتلك إيميل تأكيد. افتحه واضغط على الرابط، وبعدها ادخل.', 'auth.notinvited': 'الإيميل ده مش مدعو. اطلب الدعوة من الإدارة.',
       'auth.short': 'كلمة السر لازم تكون 6 حروف على الأقل.', 'auth.fill': 'اكتب الإيميل وكلمة السر.', 'auth.err': 'حصلت مشكلة. جرّب تاني.',
@@ -39,7 +39,7 @@
       'resign.intro': 'هنا تقدر تقدّم استقالتك بشكل رسمي ومحترم.', 'resign.last': 'آخر يوم', 'from.whom': 'صاحب الطلب',
       'dayn': 'يوم', 'profile': 'الملف الشخصي', 'lang': 'English', 'logout': 'خروج', 'role': 'الدور', 'role.admin': 'أدمن', 'role.manager': 'مدير', 'role.employee': 'موظف',
       'team.h': 'الفريق', 'install': 'ضيف التطبيق على شاشتك: من المتصفح اختار "إضافة إلى الشاشة الرئيسية".',
-      'dial.hint': 'لفّ العدسة مع عقارب الساعة أو عكسها وسيبها', 'dial.tap': 'اضغط للفتح', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
+      'dial.hint': 'المس العدسة ولفّها وسيبها تفتح', 'dial.tap': 'المس ولفّ', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
       'balance.of': 'متبقي من', 'used': 'تم استخدامها', 'offline': 'مفيش إنترنت'
     },
     en: {
@@ -65,7 +65,7 @@
       'f.title': 'Title', 'f.cat': 'Category', 'f.prio': 'Priority', 'f.desc': 'Details', 'f.type': 'Leave type', 'f.from': 'From', 'f.to': 'To', 'f.reason': 'Reason (optional)',
       'f.lastday': 'Last working day', 'f.notes': 'Notes (optional)', 'f.name': 'Client name', 'f.contact': 'Contact person', 'f.phone': 'Phone', 'f.email': 'Email', 'f.status': 'Status',
       'save': 'Save', 'send': 'Send', 'cancel': 'Cancel', 'close': 'Close', 'back': 'Back', 'edit': 'Edit', 'delete': 'Delete', 'saved': 'Saved', 'sent': 'Sent', 'fail': 'Could not save. Try again.',
-      'mine': 'Mine', 'all': 'All', 'team': 'Everyone', 'search': 'Search…', 'comments': 'التعليقات', 'comment.ph': 'Write a comment…', 'by': 'by',
+      'mine': 'Mine', 'all': 'All', 'team': 'Everyone', 'search': 'Search…', 'comments': 'Comments', 'comment.ph': 'Write a comment…', 'by': 'by',
       'st.todo': 'To do', 'st.in_progress': 'In progress', 'st.done': 'Done',
       'f.assignee': 'Assign to', 'f.due': 'Due date', 'to': 'to', 'from.admin': 'From',
       'pr.low': 'Low', 'pr.normal': 'Normal', 'pr.high': 'High', 'pr.urgent': 'Urgent',
@@ -77,9 +77,9 @@
       'approve': 'Approve', 'reject': 'Reject', 'accept': 'Accept', 'withdraw': 'Withdraw request', 'cancelreq': 'Cancel request', 'note': 'Decision note (optional)',
       'resign.warn': 'This goes to management only. You can withdraw it while it is pending.', 'resign.confirm': 'Are you sure you want to resign?', 'resign.yes': 'Yes, submit',
       'resign.intro': 'Submit your resignation formally and respectfully.', 'resign.last': 'Last day', 'from.whom': 'Requested by',
-      'dayn': 'days', 'profile': 'Profile', 'lang': 'العربية', 'logout': 'Sign out', 'role': 'Role', 'role.admin': 'أدمن', 'role.manager': 'مدير', 'role.employee': 'Employee',
+      'dayn': 'days', 'profile': 'Profile', 'lang': 'العربية', 'logout': 'Sign out', 'role': 'Role', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Employee',
       'team.h': 'Team members', 'install': 'Add the app to your home screen: use "Add to Home Screen" in the browser menu.',
-      'dial.hint': 'Rotate the lens clockwise or counter-clockwise, then let go', 'dial.tap': 'Tap to add', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
+      'dial.hint': 'Touch the lens, turn it, let go to open', 'dial.tap': 'Touch and turn', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
       'balance.of': 'of', 'used': 'used', 'offline': 'Offline'
     }
   };

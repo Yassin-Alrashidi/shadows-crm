@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=60) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=61) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -180,7 +180,6 @@ html[data-theme=dark] .pvt{background:transparent!important}
 .card,.cl,.note{border:0!important}
 /* v52 system: black + one red, rest grey. heavy type. one focal. no lines. eye only in the lens */
 html body .bc.urgent,html body .bc{background:linear-gradient(145deg,#E11827,#8d0712)!important;border:0!important}
-.sub{display:none!important}
 .panel>h1+.sub{display:none!important}
 .panel h1{font-weight:900!important;letter-spacing:.03em!important;font-size:34px!important}
 .panel h1:after{display:none!important}
@@ -243,3 +242,7 @@ html[data-theme=dark] .item,html[data-theme=dark] .card,html[data-theme=dark] .c
 html body .btn.danger{background:var(--soft)!important;color:#E11827!important;box-shadow:none!important;font-weight:800}
 html body .item,html body .card,html body .kpi,html body .starcard,html body .bc,html body .fld input,html body .fld select,html body .fld textarea,html body input,html body select,html body textarea,html body .sheet *,html body #sheet .item{border:0!important}
 html body #sheet .item{box-shadow:0 8px 20px -12px rgba(0,0,0,.35)!important}
+
+@media print{body>*:not(#sheet):not(#sheetbg){display:none!important}#sheetbg{display:none!important}body::after{display:none!important}#sheet{position:static!important;transform:none!important;box-shadow:none!important;max-height:none!important;overflow:visible!important;width:auto!important;background:#fff!important;color:#000!important}#sheet .btn{display:none!important}#sheet .kpi,#sheet .card{box-shadow:none!important;border:1px solid #ccc!important;color:#000!important;background:#fff!important}#sheet *{color:#000!important}}
+.starcard{padding:16px 20px!important;gap:0!important}
+.starcard>div{margin:0!important}

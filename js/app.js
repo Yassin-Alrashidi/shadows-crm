@@ -160,6 +160,7 @@
     var used = D.leaves.filter(function (l) { return l.user_id === uid && l.type === 'annual' && (l.status === 'approved' || l.status === 'pending'); }).reduce(function (s, l) { return s + (l.days || 0); }, 0), tot = CFG.annualLeaveDays || 21;
     openSheet('<h2>' + esc(p.name) + '</h2>' + (curStar() && curStar().user_id === uid ? '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small></div></div>' : '') + '<p class="sub" dir="ltr" style="text-align:start">' + esc(p.email) + ' · ' + T('role.' + p.role) + '</p>' +
       (isMgr() ? '<label class="fld"><span>' + T('team.of') + '</span><select data-team="' + uid + '">' + ['']. concat(TEAMS).map(function (tm) { return '<option value="' + tm + '"' + ((p.team || '') === tm ? ' selected' : '') + '>' + teamLabel(tm) + '</option>'; }).join('') + '</select></label>' : (p.team ? '<p class="sub">' + teamLabel(p.team) + '</p>' : '')) +
+      (me.role === 'admin' && uid !== me.id ? '<h2>' + L('Access', 'الصلاحيات') + '</h2><div class="chips">' + ['employee', 'manager', 'admin'].map(function (r) { return '<button class="' + (p.role === r ? 'on' : '') + '" data-setrole="' + uid + ':' + r + '">' + T('role.' + r) + '</button>'; }).join('') + '</div><p class="m" style="color:var(--mut);margin:8px 0 0">' + L('Employee: own tasks, leaves and expenses. Manager: also approves requests, runs the team and clients. Admin: everything, including roles.', 'موظف: مهامه وإجازاته ومصروفاته. مدير: كمان بيوافق على الطلبات وبيدير الفريق والعملاء. أدمن: كل حاجة، ومعاها الصلاحيات.') + '</p>' : '') +
       '<h2>' + T('prof.clients') + '</h2>' + (isMgr() ? '<div class="pick">' + D.clients.filter(function (c) { return c.status !== 'closed'; }).map(function (c) { var on = D.client_members.some(function (m) { return m.client_id === c.id && m.user_id === uid; }); return '<button class="pk' + (on ? ' on' : '') + '" data-cmp="' + c.id + ':' + uid + '"><span>' + esc(c.name) + '</span></button>'; }).join('') + '</div>' : D.client_members.filter(function (m) { return m.user_id === uid; }).map(function (m) { return pill('active', clientName(m.client_id)); }).join('')) +
       '<div class="two3" style="margin-top:14px"><div class="kpi"><b>' + done.length + '</b><span>' + T('prof.done') + '</span></div><div class="kpi"><b>' + open.length + '</b><span>' + T('prof.open2') + '</span></div><div class="kpi red"><b>' + late.length + '</b><span>' + T('prof.late') + '</span></div></div>' +
       '<div class="card"><div class="row"><b>' + T('prof.leave') + '</b><span>' + Math.max(0, tot - used) + ' ' + T('balance.of') + ' ' + tot + '</span></div><div class="bar"><i style="width:' + Math.min(100, used / tot * 100) + '%"></i></div></div>' +
@@ -179,7 +180,8 @@
     var line = function (r) { return r.name + ': ' + T('rep.done') + ' ' + r.done + ' · ' + T('prof.late') + ' ' + r.late + ' · ' + T('rep.hours') + ' ' + r.hours.toFixed(1) + ' · ' + T('rep.lv') + ' ' + r.lv; };
     var text = T('report') + ' (' + T('rep.period') + ')\n' + rows.map(line).join('\n') + '\n' + T('rep.tot') + ': ' + T('rep.done') + ' ' + tot.done + ' · ' + T('prof.late') + ' ' + tot.late + ' · ' + T('rep.hours') + ' ' + tot.hours.toFixed(1);
     openSheet('<div class="rp"><small>SHADOWS | WE MOVE IN SILENCE.</small><h2>' + T('report') + '</h2><p class="sub">' + T('rep.period') + '</p></div><div class="two3 rpk"><div class="kpi"><b>' + tot.done + '</b><span>' + T('rep.done') + '</span></div><div class="kpi red"><b>' + tot.late + '</b><span>' + T('prof.late') + '</span></div><div class="kpi"><b>' + tot.hours.toFixed(0) + '</b><span>' + T('rep.hours') + '</span></div></div>' +
-      rows.map(function (r) { return '<div class="card"><div class="row"><b>' + esc(r.name) + '</b><span class="pill ' + (r.late ? 'urgent' : 'done') + '">' + r.late + ' ' + T('prof.late') + '</span></div><div class="m" style="color:var(--ash);margin-top:6px;font-size:13px">' + T('rep.done') + ' ' + r.done + ' · ' + r.hours.toFixed(1) + ' ' + T('prof.hours') + ' · ' + T('rep.lv') + ' ' + r.lv + '</div></div>'; }).join('') + '<button class="btn big" id="repcopy">' + T('rep.copy') + '</button>');
+      rows.map(function (r) { return '<div class="card"><div class="row"><b>' + esc(r.name) + '</b><span class="pill ' + (r.late ? 'urgent' : 'done') + '">' + r.late + ' ' + T('prof.late') + '</span></div><div class="m" style="color:var(--ash);margin-top:6px;font-size:13px">' + T('rep.done') + ' ' + r.done + ' · ' + r.hours.toFixed(1) + ' ' + T('prof.hours') + ' · ' + T('rep.lv') + ' ' + r.lv + '</div></div>'; }).join('') + '<button class="btn big" id="repcopy">' + T('rep.copy') + '</button><button class="btn big" id="repprint" style="margin-top:10px">' + L('Save as PDF', 'احفظ PDF') + '</button>');
+    $('#repprint').onclick = function () { window.print(); };
     $('#repcopy').onclick = function () { try { navigator.clipboard.writeText(text).then(function () { toast(T('rep.copied')); }); } catch (e) {} };
   }
   function logSheet() {
@@ -194,6 +196,7 @@
     var res = await Promise.all(names.map(function (n) { return Store.list(n); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
+  window.addEventListener('offline', function () { toast(T('offline')); });
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
@@ -538,7 +541,7 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-expense],[data-asset],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar],[data-cal],[data-cm],[data-cmp],[data-cmopen],[data-cmdone],[data-newtask]'); if (!t) return;
+    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-expense],[data-asset],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar],[data-cal],[data-cm],[data-cmp],[data-cmopen],[data-cmdone],[data-newtask],[data-setrole]'); if (!t) return;
     var d = t.dataset;
     if (d.scope) { scope = d.scope; render(0); }
     else if (d.f) { var p = d.f.split(':'); filters[p[0]] = p[1]; render(0); }
@@ -556,6 +559,7 @@
     else if (d.pickstar) pickStar(d.pickstar);
     else if (d.cal) { if (d.cal === 'prev') calM = new Date(calM.getFullYear(), calM.getMonth() - 1, 1); else if (d.cal === 'next') calM = new Date(calM.getFullYear(), calM.getMonth() + 1, 1); else calDay = d.cal.slice(4); render(0); }
     else if (d.cm) { var q = d.cm.split(':'); toggleMember(q[0], q[1]); }
+    else if (d.setrole) { var sr = d.setrole.split(':'); act(function () { return Store.update('profiles', sr[0], { role: sr[1] }); }, 'saved').then(function () { profileSheet(sr[0]); }); }
     else if (d.cmp) { var q2 = d.cmp.split(':'); toggleMemberFromProfile(q2[0], q2[1]); }
     else if (d.cmopen) clientTeamSheet(d.cmopen);
     else if (d.cmdone) clientDetail(d.cmdone);
