@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=55) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=57) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -220,10 +220,20 @@ html[data-theme=dark] .item.note.nr{background:#B80F1C!important}
 .grid .kpi:not(:first-child) b{font-size:26px;color:var(--fg)}
 .grid .kpi:not(:first-child) span{font-weight:700;font-size:10.5px;color:var(--mut)}
 .cd.sel{box-shadow:none!important;background:#E11827!important;color:#fff!important}
-.cd i,.cd b{background:#E11827!important}
-.cal .dot{background:#E11827!important}
 .bc .stamp,.bc .bcs{display:none!important}
 html body .panel .grid .kpi.red{background:#0A0A0C!important;color:#fff!important;box-shadow:0 14px 28px -12px rgba(0,0,0,.6)!important}
 html body .panel .grid .kpi.red b{color:#ff3b4a!important}
 html body .panel .grid .kpi.red span{color:#fff!important}
 .grid{grid-template-columns:1fr 1fr}
+.bc,.bc *,.item .t,.item .nd,.starcard .t,.card .m,.note .t,.note .nd,textarea,input{unicode-bidi:plaintext}
+.bc{text-align:start}
+.panel{padding-bottom:190px!important}
+.panel h2:after{display:none!important}
+.panel::after{display:none!important}
+.panel h2{font-size:13px;letter-spacing:.16em;color:var(--mut);text-transform:uppercase;margin:22px 0 10px}
+.cd.sel span,.cd.sel.today span{color:#fff!important}
+.cd .dots u{background:#E11827!important}
+.two3 .kpi{background:var(--soft)!important;box-shadow:none!important;padding:16px 14px}
+.two3 .kpi.red{background:#0A0A0C!important}
+.two3 .kpi b{font-size:30px!important}
+.two3{gap:10px}
