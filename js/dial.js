@@ -24,14 +24,22 @@
     items.forEach(function (it, i) {
       h += '<b class="tk" style="transform:rotate(' + (i * STEP - STEP / 2) + 'deg)"></b><button type="button" class="wi" data-i="' + i + '" aria-label="' + it.label() + '" style="transform:rotate(' + (i * STEP) + 'deg) translateY(-' + RHO + 'px)"><span style="transform:rotate(0deg)">' + icon(it.id, 24, 1.8) + '</span></button>';
     });
-    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i></div><button type="button" class="eyebtn" id="eyebtn" aria-label="Menu"><img src="assets/eye.webp?v=31" alt="" width="300" height="300" draggable="false"></button><div class="dlabel" id="dlabel"></div>';
+    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i></div><button type="button" class="eyebtn" id="eyebtn" aria-label="Menu"><svg class="oeye" viewBox="0 0 120 68" aria-hidden="true"><defs><clipPath id="eClip"><path d="M3 34Q60 -8 117 34Q60 76 3 34Z"/></clipPath><radialGradient id="eIg" cx="50%" cy="42%" r="62%"><stop offset="0" stop-color="#ff5a64"/><stop offset=".55" stop-color="#E11827"/><stop offset="1" stop-color="#6e0610"/></radialGradient></defs><path class="sc" d="M3 34Q60 -8 117 34Q60 76 3 34Z"/><g clip-path="url(#eClip)"><g id="eIris"><circle cx="60" cy="34" r="21" fill="url(#eIg)"/><circle class="rg" cx="60" cy="34" r="21"/><circle cx="60" cy="34" r="9" fill="#050506"/><circle cx="54.5" cy="28.5" r="2.8" fill="#fff" opacity=".92"/></g><g id="eLu" class="lidg"><path class="lid" d="M-10 -40H130V34Q60 76 -10 34Z"/></g><g id="eLd" class="lidg"><path class="lid" d="M-10 108H130V34Q60 -8 -10 34Z"/></g></g><path class="ol" d="M3 34Q60 -8 117 34Q60 76 3 34Z"/></svg></button><div class="dlabel" id="dlabel"></div>';
     el.innerHTML = h;
     var wheel = el.querySelector('#wheel'), lab = el.querySelector('#dlabel'), btns = [].slice.call(el.querySelectorAll('.wi'));
     var open = false, idle = null, lastClose = 0, eb = el.querySelector('#eyebtn');
     function setOpen(v) { open = v; el.classList.toggle('open', v); clearTimeout(idle); if (v) idle = setTimeout(function () { setOpen(false); lab.classList.remove('on'); }, 3500); else lastClose = Date.now(); }
     eb.addEventListener('click', function () { if (!open && Date.now() - lastClose > 350) setOpen(true); });
-    var dragging = false, moved = false, sx = 0, startRot = 0, pup = el.querySelector('#eyebtn img');
-    function lean(x) { pup.style.transition = x ? 'none' : 'transform .35s ease'; pup.style.transform = 'translateX(' + (x / 2).toFixed(1) + 'px)'; }
+    var dragging = false, moved = false, sx = 0, startRot = 0, pup = el.querySelector('#eIris'), lu = el.querySelector('#eLu'), ld = el.querySelector('#eLd'), lidA = 0;
+    function lean(x) { pup.style.transition = x ? 'none' : 'transform .35s ease'; pup.style.transform = 'translateX(' + (x * .9).toFixed(1) + 'px)'; }
+    function lids(a, ms) { lidA = a; var e = Math.min(a, .72) * .35, u = -46 * (1 - e), t = ms == null ? '.5s' : ms + 'ms'; lu.style.transition = ld.style.transition = 'transform ' + t + ' ease'; lu.style.transform = 'translateY(' + u.toFixed(1) + 'px)'; ld.style.transform = 'translateY(' + (-u).toFixed(1) + 'px)'; }
+    lids(0, 0);
+    function blink() {
+      if (lu.animate && !dragging && !document.hidden) { var e = Math.min(lidA, .72) * .35, u = -46 * (1 - e), kf = function (y) { return [{ transform: 'translateY(' + y + 'px)' }, { transform: 'translateY(0px)', offset: .45 }, { transform: 'translateY(' + y + 'px)' }]; };
+        lu.animate(kf(u.toFixed(1)), { duration: 340, easing: 'ease-in-out' }); ld.animate(kf((-u).toFixed(1)), { duration: 340, easing: 'ease-in-out' }); }
+      setTimeout(blink, 5000 + Math.random() * 4500);
+    }
+    setTimeout(blink, 3500);
 
     function put(deg, anim) { wheel.style.transition = anim ? 'transform .4s cubic-bezier(.25,.8,.3,1)' : 'none'; wheel.style.transform = 'translateZ(0) rotate(' + (-deg).toFixed(2) + 'deg)'; rot = deg; }
     function mark(i) { btns.forEach(function (b, k) { b.classList.toggle('on', k === i); }); }
@@ -54,7 +62,7 @@
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); } });
     el.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); } });
-    return { set: function (i) { cur = i; cand = i; mark(i); put(i * STEP, true); }, caption: function () {}, icon: icon, fx: function () { if (el.animate) el.animate([{ opacity: 1 }, { opacity: .7, offset: .5 }, { opacity: 1 }], { duration: 900 }); }, setLid: function () {} };
+    return { set: function (i) { cur = i; cand = i; mark(i); put(i * STEP, true); }, caption: function () {}, icon: icon, fx: function () { if (el.animate) el.animate([{ opacity: 1 }, { opacity: .7, offset: .5 }, { opacity: 1 }], { duration: 900 }); }, setLid: function (a) { lids(a || 0); } };
   };
   window.Dial.icon = icon;
 })();

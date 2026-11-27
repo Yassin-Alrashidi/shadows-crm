@@ -197,7 +197,7 @@
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
-  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><img src="assets/eye.webp" alt=""><div>' + T('none') + '</div></div>'; };
+  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 120 68" aria-hidden="true"><path d="M3 34Q60 -8 117 34Q60 76 3 34Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="34" r="15" fill="currentColor" opacity=".55"/><circle cx="60" cy="34" r="6.5" fill="var(--bg)"/></svg><div>' + T('none') + '</div></div>'; };
   var ENNAME = { expenses: 'EXPENSES', assets: 'ASSETS', home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
   var V = {};
   V.home = function () {
