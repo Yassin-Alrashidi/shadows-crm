@@ -47,7 +47,7 @@ $('load').onclick=async function(){$('err').textContent='';$('out').innerHTML=''
   try{var raw=await rpc('join_export',{secret:$('sec').value});
     var key=await crypto.subtle.importKey('pkcs8',unb($('priv').value),{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
     rows=[];for(var i=0;i<raw.length;i++){var r=raw[i],p='';try{p=new TextDecoder().decode(await crypto.subtle.decrypt({name:'RSA-OAEP'},key,unb(r.enc_password)))}catch(e){p='(مش مقروء)'}
-      rows.push([r.created_at.slice(0,16).replace('T',' '),r.full_name,r.nickname||'',r.job_title,p])}
+      rows.push([(function(d){var p=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())})(new Date(r.created_at)),r.full_name,r.nickname||'',r.job_title,p])}
     $('out').innerHTML=rows.length?'<table><tr><th>الوقت</th><th>الاسم</th><th>الدلع</th><th>الدور</th><th>الباسورد</th></tr>'+rows.map(function(x){return'<tr>'+x.map(function(c,j){return'<td'+(j==4?' class="pw"':'')+'>'+esc(c)+'</td>'}).join('')+'</tr>'}).join('')+'</table>':'<p>مفيش ردود لسه.</p>';
     $('csv').hidden=!rows.length;
   }catch(e){$('err').textContent='الـ secret أو المفتاح غلط.'}};
