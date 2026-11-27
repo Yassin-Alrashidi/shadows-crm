@@ -46,21 +46,43 @@ create table if not exists public.clients (
 -- Nobody can change a role from the app. Insert the two emails BEFORE they sign up (see the end of this file).
 create table if not exists public.admin_emails (email text primary key);
 alter table public.admin_emails enable row level security;  -- no policies: invisible to the app
+-- Invite-only: only emails in public.invited_emails (or the two admin emails) can create an account.
+-- Keep "Confirm email" ON in Supabase Auth. Admin role is granted here, server-side, only after the address is verified.
+create table if not exists public.invited_emails (email text primary key, invited_at timestamptz default now());
+alter table public.invited_emails enable row level security;  -- no policies: invisible to the app
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path = public as $$
+declare is_adm boolean;
 begin
+  is_adm := exists (select 1 from public.admin_emails where lower(email) = lower(new.email));
+  if not is_adm and not exists (select 1 from public.invited_emails where lower(email) = lower(new.email)) then
+    raise exception 'not invited';
+  end if;
   insert into public.profiles (id, email, name, role)
   values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email,'@',1)),
-          case when exists (select 1 from public.admin_emails where lower(email) = lower(new.email)) then 'admin' else 'employee' end);
+          case when is_adm and new.email_confirmed_at is not null then 'admin' else 'employee' end);
   return new;
 end $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+create or replace function public.promote_verified_admin() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.email_confirmed_at is not null and exists (select 1 from public.admin_emails where lower(email) = lower(new.email)) then
+    update public.profiles set role = 'admin' where id = new.id;
+  end if;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_confirmed on auth.users;
+create trigger on_auth_user_confirmed after update of email_confirmed_at on auth.users for each row execute function public.promote_verified_admin();
+-- A member is an invited person whose email is verified. Everything below requires it.
+create or replace function public.is_member() returns boolean language sql stable security definer set search_path = public, auth as $$
+  select exists (select 1 from public.profiles p join auth.users u on u.id = p.id where p.id = auth.uid() and u.email_confirmed_at is not null);
+$$;
 
 create or replace function public.is_manager() returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+  select public.is_member() and exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 create or replace function public.is_admin() returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+  select public.is_member() and exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
 alter table public.profiles enable row level security;
@@ -71,7 +93,7 @@ alter table public.resignations enable row level security;
 alter table public.clients enable row level security;
 
 -- profiles: everyone signed in can see names; roles never change from the app; you can edit your own name
-create policy "profiles read" on public.profiles for select to authenticated using (true);
+create policy "profiles read" on public.profiles for select to authenticated using (public.is_member());
 create policy "profiles self update" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid() and role = (select role from public.profiles where id = auth.uid()));
 
 -- leaves, resignations: own rows for employees, everything for managers
@@ -85,9 +107,9 @@ create policy "resign insert" on public.resignations for insert to authenticated
 create policy "resign update" on public.resignations for update to authenticated using (public.is_manager() or (user_id = auth.uid() and status = 'pending')) with check (public.is_manager() or (user_id = auth.uid() and status in ('pending','withdrawn')));
 
 -- clients: the whole team works on them
-create policy "clients read" on public.clients for select to authenticated using (true);
+create policy "clients read" on public.clients for select to authenticated using (public.is_member());
 create policy "clients insert" on public.clients for insert to authenticated with check (true);
-create policy "clients update" on public.clients for update to authenticated using (true);
+create policy "clients update" on public.clients for update to authenticated using (public.is_member());
 create policy "clients delete" on public.clients for delete to authenticated using (public.is_manager());
 
 -- tasks: admins/managers assign; the assignee and creator see and update; managers see all
@@ -121,6 +143,8 @@ create policy "attendance read" on public.attendance for select to authenticated
 create policy "attendance insert" on public.attendance for insert to authenticated with check (user_id = auth.uid());
 create policy "attendance update" on public.attendance for update to authenticated using (user_id = auth.uid());
 
+-- INVITES: add each team member's company email here before they sign up (or use Supabase > Authentication > Invite user):
+-- insert into public.invited_emails (email) values ('person@company.example');
 -- THE TWO ADMINS: run this once with the real company emails, before they create their accounts:
 -- insert into public.admin_emails (email) values ('admin1@company.example'), ('admin2@company.example');
 
@@ -171,7 +195,7 @@ create table if not exists public.task_ack (
   created_at timestamptz default now(), unique (task_id, user_id)
 );
 alter table public.task_ack enable row level security;
-create policy "ack read" on public.task_ack for select to authenticated using (true);
+create policy "ack read" on public.task_ack for select to authenticated using (public.is_member());
 create policy "ack insert" on public.task_ack for insert to authenticated with check (user_id = auth.uid());
 
 -- star of the week: one per week, picked by an admin
@@ -182,7 +206,7 @@ create table if not exists public.stars (
   created_at timestamptz default now()
 );
 alter table public.stars enable row level security;
-create policy "stars read" on public.stars for select to authenticated using (true);
+create policy "stars read" on public.stars for select to authenticated using (public.is_member());
 create policy "stars insert" on public.stars for insert to authenticated with check (public.is_manager());
 create policy "stars delete" on public.stars for delete to authenticated using (public.is_manager());
 
@@ -193,5 +217,5 @@ create table if not exists public.broadcasts (
   body text not null, urgent boolean not null default false, created_at timestamptz default now()
 );
 alter table public.broadcasts enable row level security;
-create policy "bc read" on public.broadcasts for select to authenticated using (true);
+create policy "bc read" on public.broadcasts for select to authenticated using (public.is_member());
 create policy "bc insert" on public.broadcasts for insert to authenticated with check (public.is_manager() and from_user = auth.uid());

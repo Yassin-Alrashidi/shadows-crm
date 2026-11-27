@@ -434,7 +434,7 @@
     if (!em || !pw) { err.textContent = T('auth.fill'); return; }
     if (authMode === 'up' && pw.length < 6) { err.textContent = T('auth.short'); return; }
     try { me = authMode === 'up' ? await Store.signUp({ email: em, password: pw, name: fm.name.value.trim() }) : await Store.signIn({ email: em, password: pw }); if (!me) { err.textContent = T('auth.confirm'); return; } enter(); }
-    catch (x) { var m = String(x && x.message || x); err.textContent = /exist|registered/i.test(m) ? T('auth.exists') : /bad|invalid/i.test(m) ? T('auth.bad') : /confirm/i.test(m) ? T('auth.confirm') : T('auth.err'); }
+    catch (x) { var m = String(x && x.message || x); err.textContent = /exist|registered/i.test(m) ? T('auth.exists') : /bad|invalid/i.test(m) ? T('auth.bad') : /confirm/i.test(m) ? T('auth.confirm') : /invit|database error/i.test(m) ? T('auth.notinvited') : T('auth.err'); }
   };
   if (Store.mode === 'demo') $('#demobtn').hidden = false;
   $('#demobtn').onclick = async function () { me = await Store.demoSeed(); enter(); };
