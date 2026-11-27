@@ -14,18 +14,34 @@
   };
   function icon(id, size, sw) { return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="' + (sw || 1.7) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[id] + '</svg>'; }
 
-  var EYE = '' +
-    '<svg viewBox="-4 -14 108 118" aria-hidden="true">' +
-    '<defs><radialGradient id="ir" cx="50%" cy="46%" r="55%"><stop offset="0" stop-color="#ff4a52"/><stop offset=".45" stop-color="#e11827"/><stop offset="1" stop-color="#4a0510"/></radialGradient>' +
-    '<radialGradient id="bz" cx="50%" cy="50%" r="50%"><stop offset=".78" stop-color="#0b0b0e"/><stop offset="1" stop-color="#1c1013"/></radialGradient></defs>' +
-    '<path class="brow" d="M6 8 L50 -8 L94 8" fill="none" stroke="#e11827" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<circle cx="50" cy="52" r="48" fill="url(#bz)" stroke="#e11827" stroke-opacity=".75" stroke-width="1.6"/>' +
-    '<g class="ring" id="dRing" style="transform-origin:50px 52px">' + (function () { var s = ''; for (var i = 0; i < 48; i++) { var a = i * 7.5 * Math.PI / 180, big = i % 4 === 0, r1 = big ? 38.5 : 41, r2 = 45; s += '<line x1="' + (50 + Math.sin(a) * r1).toFixed(2) + '" y1="' + (52 - Math.cos(a) * r1).toFixed(2) + '" x2="' + (50 + Math.sin(a) * r2).toFixed(2) + '" y2="' + (52 - Math.cos(a) * r2).toFixed(2) + '" stroke="' + (big ? '#e11827' : '#f7f5f5') + '" stroke-opacity="' + (big ? 1 : .35) + '" stroke-width="' + (big ? 1.6 : 1) + '"/>'; } return s; })() + '</g>' +
-    '<circle cx="50" cy="52" r="34" fill="url(#ir)"/>' +
-    '<g id="dIris" style="transform-origin:50px 52px"><circle cx="50" cy="52" r="27" fill="none" stroke="#2a0409" stroke-opacity=".7" stroke-width="2.2"/><circle cx="50" cy="52" r="20" fill="none" stroke="#2a0409" stroke-opacity=".6" stroke-width="2"/><circle cx="50" cy="52" r="13.5" fill="none" stroke="#2a0409" stroke-opacity=".55" stroke-width="1.8"/></g>' +
-    '<g id="dPupil"><ellipse cx="50" cy="52" rx="6.2" ry="15" fill="#050506"/><ellipse cx="47.5" cy="44" rx="1.8" ry="3" fill="#fff" fill-opacity=".75"/></g>' +
-    '<g id="dLid" style="transform-origin:50px 52px;transform:scaleY(0)"><circle cx="50" cy="52" r="34" fill="#0b0b0e"/></g>' +
-    '</svg>';
+  var EYE = (function () {
+    var AL = 'M12 54 L28 41 L50 34 L72 41 L88 54 L72 66 L50 72 L28 66 Z';
+    var ticks = '', i, a, big, r1, r2;
+    for (i = 0; i < 48; i++) { a = i * 7.5 * Math.PI / 180; big = i % 4 === 0; r1 = big ? 39 : 41.5; r2 = 45.5; ticks += '<line x1="' + (50 + Math.sin(a) * r1).toFixed(2) + '" y1="' + (52 - Math.cos(a) * r1).toFixed(2) + '" x2="' + (50 + Math.sin(a) * r2).toFixed(2) + '" y2="' + (52 - Math.cos(a) * r2).toFixed(2) + '" stroke="' + (big ? '#ff3a3f' : '#f7f5f5') + '" stroke-opacity="' + (big ? 1 : .3) + '" stroke-width="' + (big ? 1.5 : .8) + '"/>'; }
+    var facets = '', k, a1, a2;
+    for (k = 0; k < 24; k++) { a1 = k * 15 * Math.PI / 180; a2 = (k + 1) * 15 * Math.PI / 180; facets += '<path d="M50 52 L' + (50 + Math.sin(a1) * 30).toFixed(1) + ' ' + (52 - Math.cos(a1) * 30).toFixed(1) + ' L' + (50 + Math.sin(a2) * 30).toFixed(1) + ' ' + (52 - Math.cos(a2) * 30).toFixed(1) + 'Z" fill="' + (k % 2 ? '#000' : '#ff5a3c') + '" fill-opacity="' + (k % 2 ? .22 : .10) + '"/>'; }
+    return '<svg viewBox="-4 -14 108 118" aria-hidden="true"><defs>' +
+      '<radialGradient id="bz" cx="50%" cy="50%" r="50%"><stop offset=".55" stop-color="#050405"/><stop offset=".9" stop-color="#1a0407"/><stop offset="1" stop-color="#3a0710"/></radialGradient>' +
+      '<radialGradient id="ir" cx="50%" cy="52%" r="50%"><stop offset="0" stop-color="#ffb08a"/><stop offset=".22" stop-color="#ff6a3c"/><stop offset=".5" stop-color="#ff2a30"/><stop offset=".82" stop-color="#7d0714"/><stop offset="1" stop-color="#1c0206"/></radialGradient>' +
+      '<radialGradient id="sc" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="#3a0710"/><stop offset="1" stop-color="#0a0204"/></radialGradient>' +
+      '<radialGradient id="gl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#e11827" stop-opacity=".55"/><stop offset="1" stop-color="#e11827" stop-opacity="0"/></radialGradient>' +
+      '<clipPath id="alc"><path d="' + AL + '"/></clipPath></defs>' +
+      '<path class="brow" d="M4 10 L50 -10 L96 10" fill="none" stroke="#e11827" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>' +
+      '<path d="M16 14 L50 0 L84 14" fill="none" stroke="#910814" stroke-width="1.2"/>' +
+      '<circle cx="50" cy="52" r="48" fill="url(#bz)" stroke="#e11827" stroke-opacity=".8" stroke-width="1.4"/>' +
+      '<circle cx="50" cy="52" r="47" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="2"/>' +
+      '<g id="dRing" style="transform-origin:50px 52px">' + ticks + '</g>' +
+      '<circle cx="50" cy="52" r="38" fill="url(#gl)"/>' +
+      '<path d="' + AL + '" fill="url(#sc)"/>' +
+      '<g clip-path="url(#alc)"><g id="dIris" style="transform-origin:50px 52px"><circle cx="50" cy="52" r="27" fill="url(#ir)"/>' + facets +
+      '<circle cx="50" cy="52" r="27" fill="none" stroke="#1c0206" stroke-width="2.4"/><circle cx="50" cy="52" r="19" fill="none" stroke="#ff8a6a" stroke-opacity=".22" stroke-width="1"/><circle cx="50" cy="52" r="11" fill="none" stroke="#2a0409" stroke-opacity=".5" stroke-width="1"/></g>' +
+      '<g id="dPupil"><path d="M50 37 L56 52 L50 67 L44 52 Z" fill="#030203"/><path d="M47 44 L49 40 L49.6 47 Z" fill="#fff" fill-opacity=".8"/></g>' +
+      '<path d="M0 20 L100 20 L100 38 L50 45 L0 38 Z" fill="#050405" fill-opacity=".82"/>' +
+      '<path d="M0 38 L50 45 L100 38" fill="none" stroke="#ff3a3f" stroke-opacity=".5" stroke-width=".8"/>' +
+      '<path d="M0 84 L100 84 L100 66 L50 62 L0 66Z" fill="#050405" fill-opacity=".45"/></g>' +
+      '<path d="' + AL + '" fill="none" stroke="#ff3a3f" stroke-width="1.3" stroke-linejoin="miter"/>' +
+      '<g id="dLid" style="transform-origin:50px 52px;transform:scaleY(0)"><path d="' + AL + '" fill="#050405"/></g></svg>';
+  })();
 
   window.Dial = function (o) {
     var el = o.el, items = o.items, n = items.length, STEP = 56, cur = o.index || 0;

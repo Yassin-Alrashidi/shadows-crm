@@ -230,7 +230,7 @@
     if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
     var p = document.createElement('div'); p.className = 'panel'; p.innerHTML = '<div class="eyebrow">0' + (cur + 1) + ' / ' + ENNAME[id] + '</div>' + V[id]();
-    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id;
+    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = '0' + (cur + 1);
     [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
     $('#addb').hidden = !QUICK[id]; bell();
