@@ -3,7 +3,7 @@
   'use strict';
   var D = {
     ar: {
-      app: 'Shadows', tag: 'بنتحرك في صمت', loading: 'ثانية واحدة…',
+      app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'ثانية واحدة…',
       'auth.in': 'Login', 'auth.up': 'حساب جديد', 'auth.email': 'الإيميل', 'auth.pw': 'كلمة السر', 'auth.name': 'اسمك',
       'auth.go.in': 'ادخل', 'auth.go.up': 'اعمل حساب', 'auth.demo': 'جرّب الـ Demo', 'auth.hint.up': 'أول حساب بيبقى أدمن.',
       'auth.bad': 'الإيميل أو كلمة السر غلط.', 'auth.exists': 'الإيميل ده مسجّل قبل كده.', 'auth.confirm': 'المشروع لسه طالب تأكيد الإيميل. اقفل خيار "Confirm email" في إعدادات الدخول.',
@@ -36,11 +36,11 @@
       'resign.intro': 'هنا تقدر تقدّم استقالتك بشكل رسمي ومحترم.', 'resign.last': 'آخر يوم', 'from.whom': 'صاحب الطلب',
       'dayn': 'أيام', 'profile': 'الملف الشخصي', 'lang': 'English', 'logout': 'خروج', 'role': 'الدور', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Team',
       'team.h': 'الـ Team', 'install': 'ضيف التطبيق على شاشتك: من المتصفح اختار "إضافة إلى الشاشة الرئيسية".',
-      'dial.hint': 'لفّ العدسة يمين وشمال وسيبها', 'dial.tap': 'اضغط للإضافة', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
+      'dial.hint': 'لفّ العدسة مع عقارب الساعة أو عكسها وسيبها', 'dial.tap': 'اضغط للإضافة', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
       'balance.of': 'من', 'used': 'اتاخد', 'offline': 'مفيش إنترنت'
     },
     en: {
-      app: 'Shadows', tag: 'We move in silence', loading: 'One moment…',
+      app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'One moment…',
       'auth.in': 'Sign in', 'auth.up': 'New account', 'auth.email': 'Email', 'auth.pw': 'Password', 'auth.name': 'Your name',
       'auth.go.in': 'Sign in', 'auth.go.up': 'Create account', 'auth.demo': 'Try the demo', 'auth.hint.up': 'The first account becomes admin.',
       'auth.bad': 'Wrong email or password.', 'auth.exists': 'That email is already registered.', 'auth.confirm': 'The project still asks for email confirmation. Turn off "Confirm email" in the sign-in settings.',
@@ -73,7 +73,7 @@
       'resign.intro': 'Submit your resignation formally and respectfully.', 'resign.last': 'Last day', 'from.whom': 'Requested by',
       'dayn': 'days', 'profile': 'Profile', 'lang': 'العربية', 'logout': 'Sign out', 'role': 'Role', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Employee',
       'team.h': 'Team members', 'install': 'Add the app to your home screen: use "Add to Home Screen" in the browser menu.',
-      'dial.hint': 'Turn the lens left or right, then let go', 'dial.tap': 'Tap to add', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
+      'dial.hint': 'Rotate the lens clockwise or counter-clockwise, then let go', 'dial.tap': 'Tap to add', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
       'balance.of': 'of', 'used': 'used', 'offline': 'Offline'
     }
   };

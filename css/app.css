@@ -250,3 +250,10 @@ html[lang=ar] .menuitem .mi{font-family:Cairo;font-stretch:100%;text-transform:n
 .item:before{direction:inherit;unicode-bidi:isolate}
 .item.soon{border-inline-start:0;border-top-color:#f0b040;box-shadow:inset 0 1px 0 #f0b040}
 .item.late,.item.soon{border-inline-start:0!important}
+/* v11 */
+#hubbg img{width:max(190vw,150vh);top:45%;opacity:.85;mix-blend-mode:screen;-webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent 100%);mask-image:radial-gradient(closest-side,#000 55%,transparent 100%);filter:saturate(1.15) contrast(1.1)}
+#hubbg:after{background:radial-gradient(70% 55% at 50% 48%,transparent 50%,var(--ink) 110%)}
+.dialhint{max-width:80vw;white-space:normal;text-align:center}
+.panel h1{padding-inline-end:70px}
+body.dialing .dialhint{opacity:0}
+.pcard,.wc{border-radius:0}.pcard{border-color:var(--ember);background:rgba(5,4,5,.88)}
