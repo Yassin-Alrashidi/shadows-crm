@@ -45,13 +45,13 @@
       '<path d="M0 86 L100 86 L100 68 L50 63 L0 68Z" fill="#040203" fill-opacity=".4"/></g>' +
       '<path d="' + FR + '" fill="none" stroke="#ff6a5a" stroke-width="1.4" stroke-linejoin="miter"/>' +
       '<circle id="dGlint" cx="50" cy="52" r="40" fill="url(#r2)" opacity="0" style="mix-blend-mode:normal"/><rect id="dScan" x="4" y="-6" width="92" height="3" fill="#ff3a3f" opacity="0"/>' +
-      '<g id="dLid" style="transform-origin:50px 52px;transform:scaleY(0)"><path d="' + FR + '" fill="#050405"/></g></svg>';
+      '<g clip-path="url(#alc)"><rect id="dLidT" x="0" y="20" width="100" height="33" fill="#050405" style="transform-origin:50px 20px;transform:scaleY(0)"/><rect id="dLidB" x="0" y="52" width="100" height="34" fill="#050405" style="transform-origin:50px 86px;transform:scaleY(0)"/></g></svg>';
   })();
 
   window.Dial = function (o) {
     var el = o.el, items = o.items, n = items.length, STEP = 56, cur = o.index || 0;
     el.innerHTML = EYE;
-    var ring = el.querySelector('#dRing'), pupil = el.querySelector('#dPupil'), iris = el.querySelector('#dIris'), lid = el.querySelector('#dLid');
+    var ring = el.querySelector('#dRing'), pupil = el.querySelector('#dPupil'), iris = el.querySelector('#dIris'), lidT = el.querySelector('#dLidT'), lidB = el.querySelector('#dLidB'), lid = { animate: function (k, o) { lidT.animate(k, o); return lidB.animate(k, o); }, style: { set transform(v) { lidT.style.transform = v; lidB.style.transform = v; } } };
     var cands = document.getElementById('cands'), cap = document.getElementById('dialcap');
     cands.innerHTML = '<div class="cw"><div class="cwrow">' + items.map(function (it, i) { return '<div class="wc" data-i="' + i + '">' + icon(it.id, 22) + '</div>'; }).join('') + '</div></div>' +
       '<div class="pcard" id="pcard"><div class="pcard__i"></div><div class="pcard__t"></div><div class="pcard__s"></div></div>';
