@@ -22,6 +22,7 @@ h1{font:800 26px/1.3 'Cairo';margin:0 0 6px;text-align:center}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 label{display:block;margin:0 0 14px;font-weight:600;font-size:14px}
 label small{color:var(--mut);font-weight:400}
+label small.hint{display:block;margin:6px 0 0;font-size:13px}
 input{width:100%;height:50px;margin-top:6px;padding:0 14px;font:400 16px 'Cairo',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--ln);border-radius:14px;outline:0}
 input:focus{border-color:var(--red)}
 input.bad{border-color:var(--red);background:var(--pk)}
@@ -49,7 +50,7 @@ input.en{direction:ltr;text-align:left}
 <label>If u had a nickname <small>(optional)</small><input name="nick" autocomplete="nickname" maxlength="30"></label>
 <label>What's your role in the company?<input class="en" name="role" maxlength="60" dir="ltr"><p class="e"></p></label>
 <label dir="rtl">الباسورد اللي تحب يكون لإيميلك في الشركة
-<span class="pw"><input class="en" name="pw" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><p class="e"></p></label>
+<span class="pw"><input class="en" name="pw" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><small class="hint" dir="rtl">اكتب باسورد جديد خاص بالشغل، مش واحد بتستخدمه في مكان تاني.</small><p class="e"></p></label>
 <p class="e" id="top"></p>
 <button class="btn" id="go" type="submit">Submit</button>
 </form>
