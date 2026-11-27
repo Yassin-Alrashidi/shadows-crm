@@ -147,7 +147,7 @@
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
-  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><img src="assets/' + (['tasks', 'clients', 'me'].indexOf(ORDER[cur]) > -1 ? 'owl-head' : 'owl-wings') + '.webp" alt=""><div>' + T('none') + '</div><small>SILENT WORK.</small></div>'; };
+  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><img src="assets/eye.webp" alt=""><div>' + T('none') + '</div></div>'; };
   var ENNAME = { expenses: 'EXPENSES', assets: 'ASSETS', home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
   var V = {};
   V.home = function () {

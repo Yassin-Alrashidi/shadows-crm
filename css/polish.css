@@ -1,0 +1,33 @@
+/* v44 design pass: rhythm, soft depth, real sticky notes, calmer empty states. Static styles only. */
+:root{--sh1:0 1px 2px rgba(23,22,26,.05),0 8px 22px rgba(23,22,26,.06)}
+html[data-theme=dark]{--sh1:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35)}
+.panel{padding-top:calc(var(--sat) + 76px)!important}
+.panel h1{font-size:32px!important;line-height:1.15!important;margin:2px 0 6px!important}
+.panel h1:after{content:"";display:block;width:34px;height:3px;background:#E11827;border-radius:3px;margin-top:10px}
+.panel .sub{margin:0 0 18px!important;border:0!important;padding:0!important;font-size:14.5px}
+.panel>.bc,.panel>.starcard,.panel>.card{margin:0 0 12px!important;box-shadow:var(--sh1)!important;border-radius:18px!important;padding:14px 16px!important}
+.panel>.bc{border:1px solid #E11827!important}
+.panel>.acts{margin:0 0 16px!important}
+.panel .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
+.panel .grid .kpi{border-radius:18px!important;box-shadow:var(--sh1)!important;padding:16px!important;border:1px solid var(--ln)!important}
+.panel .grid .kpi.red{background:#E11827!important;border-color:#E11827!important}
+.panel .grid .kpi.red b,.panel .grid .kpi.red span{color:#fff!important}
+.kpi span{font-size:12px!important;letter-spacing:.04em!important;text-transform:none!important;color:var(--mut)!important}
+.panel>.item,.panel .item:not(.note){box-shadow:var(--sh1)!important;border-radius:16px!important;margin-bottom:10px!important}
+.panel h2{margin:26px 0 10px!important;font:700 13px 'Cairo','Archivo',sans-serif!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--mut)!important}
+html[lang=ar] .panel h2{letter-spacing:0!important;font-size:15px!important}
+/* sticky notes */
+.board{gap:16px 14px!important;margin-top:12px!important}
+.item.note{position:relative;box-shadow:0 1px 1px rgba(0,0,0,.08),0 10px 16px -6px rgba(0,0,0,.22)!important;border-radius:3px 3px 3px 22px!important;padding:20px 13px 12px!important;min-height:132px}
+.item.note:before{content:""!important;display:block!important;position:absolute;top:7px;left:50%;margin-left:-5px;width:10px;height:10px;border-radius:50%;background:#E11827;box-shadow:0 2px 3px rgba(0,0,0,.35),inset -2px -2px 0 rgba(0,0,0,.18)}
+.board .note:nth-child(3n+1){transform:rotate(-1.4deg)}.board .note:nth-child(3n+2){transform:rotate(1deg)}.board .note:nth-child(3n){transform:rotate(-.4deg)}
+.item.note .t{font-size:16px!important}
+/* empty state */
+.empty{padding:44px 0 20px!important;font:600 15px 'Cairo','Archivo',sans-serif;color:var(--mut)!important}
+.empty img{width:64px!important;opacity:.22!important;-webkit-mask-image:none!important;mask-image:none!important;margin-bottom:12px!important}
+/* top buttons */
+#burger,#addb{box-shadow:var(--sh1)!important}
+/* chips row */
+.chips,.tabs{margin:12px 0 4px}
+.empty{text-align:center!important;text-transform:none!important}
+.empty img{width:58px!important;height:58px!important;border-radius:50%;opacity:.3!important;margin:0 auto 12px!important}
