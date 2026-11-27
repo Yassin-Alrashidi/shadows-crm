@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=61) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=69) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -246,3 +246,28 @@ html body #sheet .item{box-shadow:0 8px 20px -12px rgba(0,0,0,.35)!important}
 @media print{body>*:not(#sheet):not(#sheetbg){display:none!important}#sheetbg{display:none!important}body::after{display:none!important}#sheet{position:static!important;transform:none!important;box-shadow:none!important;max-height:none!important;overflow:visible!important;width:auto!important;background:#fff!important;color:#000!important}#sheet .btn{display:none!important}#sheet .kpi,#sheet .card{box-shadow:none!important;border:1px solid #ccc!important;color:#000!important;background:#fff!important}#sheet *{color:#000!important}}
 .starcard{padding:16px 20px!important;gap:0!important}
 .starcard>div{margin:0!important}
+html body .item:not(.note){padding:16px 18px!important}
+.panel>.acts{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 14px}
+.panel>.acts .btn{margin:0!important;width:auto!important}
+.grid .kpi:first-child{padding:22px 22px 18px;min-height:0}
+.grid .kpi:first-child b{font-size:64px}
+.two3 .kpi{flex:1}
+html body #sheet input,html body #sheet select,html body #sheet textarea,html body .fld input,html body .fld select,html body .fld textarea{background:#F1F0F1!important;border-radius:14px!important;box-shadow:inset 0 1px 3px rgba(0,0,0,.08)!important}
+html[data-theme=dark] body #sheet input,html[data-theme=dark] body #sheet select,html[data-theme=dark] body #sheet textarea,html[data-theme=dark] body .fld input,html[data-theme=dark] body .fld select,html[data-theme=dark] body .fld textarea{background:#1D1D21!important}
+html body .acts{display:flex!important;flex-wrap:wrap;gap:8px}
+html body .acts .btn{width:auto!important;flex:0 0 auto;margin:0!important}
+.acts+.sub{display:none!important}
+html body .acts{flex-direction:row!important}
+html body #sheet .item{margin-bottom:8px!important}
+html body .pk{border:0!important;background:#F1F0F1!important;box-shadow:none!important}
+html body .pk.on{background:#E11827!important;color:#fff!important}
+html body .pk.on *{color:#fff!important}
+html[data-theme=dark] body .pk{background:#1D1D21!important}
+html[data-theme=dark] body .panel .grid .kpi.red,html[data-theme=dark] .two3 .kpi.red{background:#1B1B20!important}
+html[data-theme=dark] .starcard{background:#1B1B20!important}
+.two3{display:flex!important;gap:10px}
+.two3 .kpi{flex:1 1 0!important;min-width:0}
+html[data-theme=dark] body .pk.on{background:#E11827!important}
+html body #sheet .card{margin-bottom:8px!important}
+html body .btn{border:0!important}
+html body .btn.ghost,html body .btn.sec{background:var(--soft)!important}
