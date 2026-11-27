@@ -64,7 +64,7 @@ document.querySelectorAll('[data-show]').forEach(function(b){b.onclick=function(
 ['name','role','pw'].forEach(function(n){$(n).addEventListener('input',function(){err(n,'')})});
 function check(){
   var ok=true,v=function(n){return $(n).value.trim()};
-  if(v('name').length<3){err('name','Required');ok=false}
+  if(v('name').length<5){err('name','Required (5 characters or more)');ok=false}
   if(!v('role')){err('role','Required');ok=false}
   var p=$('pw').value;
   if(p.length<8||p.length>64){err('pw','8 to 64 characters');ok=false}
