@@ -31,17 +31,17 @@
       '<radialGradient id="ePg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#000"/><stop offset=".8" stop-color="#050203"/><stop offset="1" stop-color="#1a0407"/></radialGradient>' +
       '<linearGradient id="eSh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".78"/><stop offset=".42" stop-color="#000" stop-opacity=".18"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient>' +
       '<linearGradient id="eLg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a0b13"/><stop offset="1" stop-color="#14050a"/></linearGradient>' +
-      '<clipPath id="eLens"><circle cx="60" cy="60" r="47.5"/></clipPath><radialGradient id="eRg" cx="50%" cy="34%" r="72%"><stop offset="0" stop-color="#43434b"/><stop offset=".5" stop-color="#131317"/><stop offset="1" stop-color="#050507"/></radialGradient></defs>' +
+      '<clipPath id="eLens"><circle cx="60" cy="60" r="47.5"/></clipPath><linearGradient id="eMt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a66"/><stop offset=".3" stop-color="#E11827"/><stop offset=".62" stop-color="#5a0610"/><stop offset="1" stop-color="#ff2f40"/></linearGradient><radialGradient id="eVg" cx="50%" cy="50%" r="50%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient><radialGradient id="eRg" cx="50%" cy="34%" r="72%"><stop offset="0" stop-color="#43434b"/><stop offset=".5" stop-color="#131317"/><stop offset="1" stop-color="#050507"/></radialGradient></defs>' +
       '<circle class="lens" cx="60" cy="60" r="57"/><g id="eRing"><path class="tk1" d="' + tk1 + '"/><path class="tk2" d="' + tk2 + '"/></g><circle class="bez" cx="60" cy="60" r="49"/>' +
-      '<g clip-path="url(#eLens)"><g transform="translate(60 60) scale(.76) translate(-60 -34)">' +
+      '<g clip-path="url(#eLens)"><g transform="translate(60 60) scale(.9) translate(-60 -34)">' +
       '<ellipse class="glow" cx="60" cy="34" rx="74" ry="46" fill="url(#eGl)"/>' +
       '<path d="' + AL + '" fill="url(#eSc)"/>' +
       '<g clip-path="url(#eClip)"><g id="eIris"><circle cx="60" cy="34" r="21" fill="url(#eIg)"/><path class="fib" d="' + fib + '"/><circle class="rg" cx="60" cy="34" r="20.2"/><circle class="rg2" cx="60" cy="34" r="10.6"/>' +
-      '<circle id="ePup" cx="60" cy="34" r="8.8" fill="url(#ePg)"/><ellipse cx="55.4" cy="28.6" rx="3.6" ry="2.7" fill="#fff" opacity=".95" transform="rotate(-28 55.4 28.6)"/><circle cx="64.6" cy="39.6" r="1.2" fill="#fff" opacity=".5"/></g>' +
+      '<circle id="ePup" cx="60" cy="34" r="10.4" fill="url(#ePg)"/><ellipse cx="55.4" cy="28.6" rx="3.6" ry="2.7" fill="#fff" opacity=".95" transform="rotate(-28 55.4 28.6)"/><circle cx="64.6" cy="39.6" r="1.2" fill="#fff" opacity=".5"/></g>' +
       '<rect x="0" y="0" width="120" height="68" fill="url(#eSh)"/>' +
       '<g id="eLu" class="lidg"><path class="lidb" d="M-10 -40H130V34Q60 76 -10 34Z"/><path class="lid" d="M-10 -40H130V34Q60 76 -10 34Z"/></g>' +
       '<g id="eLd" class="lidg"><path class="lidb" d="M-10 108H130V34Q60 -8 -10 34Z"/><path class="lid" d="M-10 108H130V34Q60 -8 -10 34Z"/></g></g>' +
-      '<path class="olb" d="' + AL + '"/><path class="ol" d="' + AL + '"/></g></g><circle class="lensr" cx="60" cy="60" r="57"/></svg></button><div class="dlabel" id="dlabel"></div>';
+      '<path class="olb" d="' + AL + '"/><path class="ol" d="' + AL + '"/></g></g><circle cx="60" cy="60" r="47.5" fill="url(#eVg)"/><circle class="lensr" cx="60" cy="60" r="57"/><path d="M22 40A44 44 0 0 1 64 17" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/></svg></button><div class="dlabel" id="dlabel"></div>';
   }
 
   /* Camera-zoom dome: a red half circle at the bottom centre. Drag left or right to turn the wheel, release to open the page on top. */

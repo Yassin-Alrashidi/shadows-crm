@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=48) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=49) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -149,3 +149,17 @@ html[data-theme=dark] .pvt{background:#141417}
 html[data-theme=dark] .pvt{background:#17171b!important}
 .pvt.on{background:#fff0f1!important}
 html[data-theme=dark] .pvt.on{background:#2a0e12!important}
+/* v49: stronger lens, frameless smaller cards */
+html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:104px!important;height:104px!important;margin-left:-52px!important}
+#dial .oeye .lens{fill:url(#eRg);stroke:url(#eMt);stroke-width:4.4}
+#dial .oeye .bez{stroke:rgba(255,255,255,.22);stroke-width:1.3}
+#dial .oeye .tk1{stroke:rgba(255,255,255,.55);stroke-width:1.1}
+#dial .oeye .tk2{stroke:#ff4a58;stroke-width:2}
+#dial .eyebtn{filter:none;box-shadow:none}
+#dial .eyebtn:after{content:"";position:absolute;inset:-6px;border-radius:50%;background:radial-gradient(circle,rgba(225,24,39,.5) 52%,rgba(225,24,39,0) 72%);z-index:-1;pointer-events:none}
+.pvt{width:72px!important;height:84px!important;margin-left:-36px!important;border:0!important;box-shadow:none!important;background:transparent!important;gap:8px!important;border-radius:0!important}
+.pvrow{top:-42px!important;height:84px!important}
+.pvt svg{width:24px;height:24px}
+.pvt b{font-size:11.5px!important}
+.pvt.on,html[data-theme=dark] .pvt.on{background:transparent!important}
+html[data-theme=dark] .pvt{background:transparent!important}
