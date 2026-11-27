@@ -40,7 +40,7 @@ input.en{direction:ltr;text-align:left}
 </head>
 <body>
 <main id="m">
-<img class="eye" src="assets/eye.webp?v=32" alt="" width="72" height="72">
+<img class="eye" src="assets/eye.webp?v=33" alt="" width="72" height="72">
 <div class="brand">SHADOWS</div>
 <form id="f" novalidate>
 <h1>انضم لفريق Shadows</h1>
@@ -54,8 +54,7 @@ input.en{direction:ltr;text-align:left}
 <p class="note">الاسم بالإنجليزي، حروف إنجليزية فقط.</p>
 <label>الدلع <small>(اختياري)</small><input name="nick" autocomplete="nickname" maxlength="30"></label>
 <label>دورك في الشركة<input name="role" maxlength="60" placeholder="مثال: مصمم، مونتير، حسابات"><p class="e"></p></label>
-<label>الإيميل<input class="en" name="email" type="email" inputmode="email" autocomplete="email" dir="ltr" placeholder="name@example.com"><p class="e"></p></label>
-<label>الباسورد اللي عايزه لإيميلك
+<label>الباسورد اللي عايزه للإيميل
 <span class="pw"><input class="en" name="pw" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><p class="e"></p></label>
 <label>أكّد الباسورد
 <span class="pw"><input class="en" name="pw2" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><p class="e"></p></label>
@@ -64,7 +63,7 @@ input.en{direction:ltr;text-align:left}
 </form>
 <div class="foot">WE MOVE IN SILENCE.</div>
 </main>
-<script src="js/config.js?v=32"></script>
+<script src="js/config.js?v=33"></script>
 <script>
 (function(){
 var f=document.getElementById('f'),$=function(n){return f.elements[n]};
@@ -72,14 +71,13 @@ var LAT=/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
 function err(n,m){var i=$(n);i.classList.toggle('bad',!!m);var p=i.closest('label').querySelector('.e');if(p)p.textContent=m||''}
 document.querySelectorAll('[data-show]').forEach(function(b){b.onclick=function(){var i=b.previousElementSibling,s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'إخفاء':'إظهار'}});
 ['n1','n2','n3','n4'].forEach(function(n){$(n).addEventListener('input',function(){$(n).value=$(n).value.replace(/[^A-Za-z '\-]/g,'');err(n,'')})});
-['role','email','pw','pw2'].forEach(function(n){$(n).addEventListener('input',function(){err(n,'')})});
+['role','pw','pw2'].forEach(function(n){$(n).addEventListener('input',function(){err(n,'')})});
 function check(){
   var ok=true,v=function(n){return $(n).value.trim()};
   ['n1','n2','n3','n4'].forEach(function(n){if(!v(n)){err(n,'مطلوب');ok=false}else if(!LAT.test(v(n))){err(n,'حروف إنجليزية فقط');ok=false}});
   if(!v('role')){err('role','مطلوب');ok=false}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))){err('email','إيميل غير صحيح');ok=false}
   var p=$('pw').value;
-  if(p.length<8){err('pw','٨ حروف على الأقل');ok=false}
+  if(p.length<8||p.length>64){err('pw','من ٨ إلى ٦٤ حرف');ok=false}
   if($('pw2').value!==p){err('pw2','الباسورد مش متطابق');ok=false}
   return ok}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase()}
@@ -88,22 +86,25 @@ f.addEventListener('submit',async function(e){
   var v=function(n){return $(n).value.trim()};
   var name=['n1','n2','n3','n4'].map(function(n){return cap(v(n))}).join(' ');
   var meta={name:name,nickname:v('nick')||null,job_title:v('role')};
-  var email=v('email').toLowerCase(),go=document.getElementById('go');go.disabled=true;go.textContent='...';
+  var go=document.getElementById('go');go.disabled=true;go.textContent='...';
   var top=document.getElementById('top');top.textContent='';
   try{
     var C=window.CRM_CONFIG||{};
-    if(C.supabaseUrl&&C.supabaseKey){
-      /* live: the password goes only to Supabase Auth (stored hashed). It never touches a table. */
-      var r=await fetch(C.supabaseUrl.replace(/\/$/,'')+'/auth/v1/signup',{method:'POST',headers:{'apikey':C.supabaseKey,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:$('pw').value,data:meta})});
-      var j=await r.json().catch(function(){return{}});
-      if(!r.ok){var m=(j.msg||j.message||j.error_description||'')+'';throw new Error(/not invited/i.test(m)?'invite':/registered|exists/i.test(m)?'exists':'fail')}
-    }else{
-      /* demo: saved on this device only, and WITHOUT the password */
-      var L=JSON.parse(localStorage.getItem('crm.join')||'[]');L.push({email:email,name:name,nickname:meta.nickname,job_title:meta.job_title,at:new Date().toISOString()});localStorage.setItem('crm.join',JSON.stringify(L));
+    if(!(C.supabaseUrl&&C.supabaseKey)){ if(location.search.indexOf('preview')<0) throw new Error('closed'); }
+    else{
+      var base=C.supabaseUrl.replace(/\/$/,''),H={'apikey':C.supabaseKey,'Authorization':'Bearer '+C.supabaseKey,'Content-Type':'application/json'};
+      var kr=await fetch(base+'/rest/v1/rpc/join_pubkey',{method:'POST',headers:H,body:'{}'});var pk=await kr.json();
+      if(!kr.ok||!pk) throw new Error('closed');
+      /* the password is encrypted here, in the browser, with a public key. Only Yassin's private key can open it. */
+      var key=await crypto.subtle.importKey('spki',Uint8Array.from(atob(pk),function(c){return c.charCodeAt(0)}),{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+      var ct=await crypto.subtle.encrypt({name:'RSA-OAEP'},key,new TextEncoder().encode($('pw').value));
+      var enc=btoa(String.fromCharCode.apply(null,new Uint8Array(ct)));
+      var r=await fetch(base+'/rest/v1/join_responses',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},H),body:JSON.stringify({full_name:name,nickname:meta.nickname,job_title:meta.job_title,enc_password:enc})});
+      if(!r.ok) throw new Error('fail');
     }
-    document.getElementById('m').innerHTML='<img class="eye" src="assets/eye.webp?v=32" alt="" width="72" height="72"><div class="ok"><b>تمام يا '+(meta.nickname||v('n1')).replace(/[<>&"]/g,'')+'</b><p>'+(C.supabaseUrl?'افتح إيميلك وأكّد الحساب، وبعدها تقدر تدخل.':'تم الحفظ. هنتواصل معاك.')+'</p></div><div class="foot">WE MOVE IN SILENCE.</div>';
+    document.getElementById('m').innerHTML='<img class="eye" src="assets/eye.webp?v=33" alt="" width="72" height="72"><div class="ok"><b>تمام يا '+(meta.nickname||v('n1')).replace(/[<>&"]/g,'')+'</b><p>تم الاستلام. شكراً.</p></div><div class="foot">WE MOVE IN SILENCE.</div>';
   }catch(x){
-    top.textContent=x.message==='invite'?'الإيميل ده مش مدعو. كلّم ياسين.':x.message==='exists'?'الإيميل ده مسجّل قبل كده.':'حصلت مشكلة. جرّب تاني.';
+    top.textContent=x.message==='closed'?'الفورم لسه مش مفتوح. جرّب بعدين.':'حصلت مشكلة. جرّب تاني.';
     go.disabled=false;go.textContent='إرسال'}
 });
 })();

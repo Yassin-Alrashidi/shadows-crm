@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Shadows | الردود</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('crm.theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){}</script>
+<style>
+:root{--bg:#fff;--fg:#17161A;--mut:#6F6A72;--ln:#E4E0E2;--red:#E11827}
+html[data-theme=dark]{--bg:#0E0E10;--fg:#F2F0F1;--mut:#9A959C;--ln:#2A292E;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.6 'Cairo',system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 60px}h1{font:800 24px 'Cairo';margin:0 0 4px}h2{font:800 17px 'Cairo';margin:26px 0 8px}
+p{color:var(--mut);margin:0 0 10px}input,textarea{width:100%;padding:12px 14px;margin:0 0 10px;font:400 15px 'Cairo',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--ln);border-radius:14px;direction:ltr}
+textarea{height:80px;font-size:12px}.b{display:inline-block;height:46px;padding:0 20px;border:0;border-radius:14px;background:var(--red);color:#fff;font:800 15px 'Cairo';cursor:pointer;margin:0 0 8px}
+.b[hidden]{display:none}.b.g{background:var(--bg);color:var(--fg);border:1px solid var(--ln)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}td,th{padding:10px 8px;border-bottom:1px solid var(--ln);text-align:start}th{color:var(--mut);font-weight:600}td.pw{direction:ltr;font-family:ui-monospace,monospace}
+.e{color:var(--red)}
+</style></head><body><main>
+<h1>ردود الفورم</h1><p>خاصة بياسين. الباسوردات متشفرة ومش بتتفتح غير بمفتاحك.</p>
+<h2>١. الدخول</h2>
+<input id="sec" type="password" placeholder="الرقم السري بتاعك (الـ secret)" autocomplete="off">
+<textarea id="priv" placeholder="المفتاح الخاص (private key). الصقه هنا أو اختار الملف"></textarea>
+<input id="pf" type="file" accept=".txt,.key">
+<button class="b" id="load">عرض الردود</button> <button class="b g" id="csv" hidden>تحميل CSV</button>
+<p class="e" id="err"></p>
+<div id="out"></div>
+<h2>٢. أول مرة بس: عمل المفاتيح</h2>
+<p>بيعمل مفتاحين في متصفحك. المفتاح العام بيتحفظ في الفورم، والخاص بينزل ملف عندك. احتفظ به، من غيره مفيش حد يقدر يقرأ الباسوردات، ولا أنا.</p>
+<button class="b g" id="gen">عمل المفاتيح</button>
+</main>
+<script src="js/config.js?v=33"></script>
+<script>
+var C=window.CRM_CONFIG||{},$=function(i){return document.getElementById(i)},rows=[];
+var base=(C.supabaseUrl||'').replace(/\/$/,''),H={'apikey':C.supabaseKey,'Authorization':'Bearer '+C.supabaseKey,'Content-Type':'application/json'};
+function b64(b){return btoa(String.fromCharCode.apply(null,new Uint8Array(b)))}
+function unb(s){return Uint8Array.from(atob(s.replace(/\s/g,'')),function(c){return c.charCodeAt(0)})}
+function rpc(n,a){return fetch(base+'/rest/v1/rpc/'+n,{method:'POST',headers:H,body:JSON.stringify(a)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error('denied');return j})})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+$('pf').onchange=function(){var f=this.files[0];if(f)f.text().then(function(t){$('priv').value=t.trim()})};
+$('gen').onclick=async function(){$('err').textContent='';
+  try{if(!base)throw 0;var s=$('sec').value;if(!s)throw 1;
+    var k=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+    var pub=b64(await crypto.subtle.exportKey('spki',k.publicKey)),pri=b64(await crypto.subtle.exportKey('pkcs8',k.privateKey));
+    await rpc('join_set_pubkey',{secret:s,k:pub});
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([pri],{type:'text/plain'}));a.download='shadows-private-key.txt';a.click();
+    $('priv').value=pri;$('err').textContent='تم. الملف نزل. احفظه في مكان آمن.';
+  }catch(e){$('err').textContent='اكتب الـ secret الأول، أو تأكد إن الإعداد اتعمل في Supabase.'}};
+$('load').onclick=async function(){$('err').textContent='';$('out').innerHTML='';
+  try{var raw=await rpc('join_export',{secret:$('sec').value});
+    var key=await crypto.subtle.importKey('pkcs8',unb($('priv').value),{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+    rows=[];for(var i=0;i<raw.length;i++){var r=raw[i],p='';try{p=new TextDecoder().decode(await crypto.subtle.decrypt({name:'RSA-OAEP'},key,unb(r.enc_password)))}catch(e){p='(مش مقروء)'}
+      rows.push([r.created_at.slice(0,16).replace('T',' '),r.full_name,r.nickname||'',r.job_title,p])}
+    $('out').innerHTML=rows.length?'<table><tr><th>الوقت</th><th>الاسم</th><th>الدلع</th><th>الدور</th><th>الباسورد</th></tr>'+rows.map(function(x){return'<tr>'+x.map(function(c,j){return'<td'+(j==4?' class="pw"':'')+'>'+esc(c)+'</td>'}).join('')+'</tr>'}).join('')+'</table>':'<p>مفيش ردود لسه.</p>';
+    $('csv').hidden=!rows.length;
+  }catch(e){$('err').textContent='الـ secret أو المفتاح غلط.'}};
+$('csv').onclick=function(){var q=function(c){return'"'+String(c).replace(/"/g,'""')+'"'};
+  var t='\ufefftime,name,nickname,role,password\n'+rows.map(function(r){return r.map(function(c,j){c=String(c);if(/^[=+\-@]/.test(c))c="'"+c;return q(c)}).join(',')}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='shadows-responses.csv';a.click()};
+</script></body></html>

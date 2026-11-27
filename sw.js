@@ -1,5 +1,5 @@
-var C='shadows-crm-v32';
-var A=['./','index.html','css/app.css?v=32','css/light.css?v=32','js/config.js?v=32','js/i18n.js?v=32','js/store.js?v=32','js/dial.js?v=32','js/fx.js?v=32','js/app.js?v=32','assets/eye.webp?v=32','join.html','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png'];
+var C='shadows-crm-v33';
+var A=['./','index.html','css/app.css?v=33','css/light.css?v=33','js/config.js?v=33','js/i18n.js?v=33','js/store.js?v=33','js/dial.js?v=33','js/fx.js?v=33','js/app.js?v=33','assets/eye.webp?v=33','join.html','results.html','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(A)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==C}).map(function(x){return caches.delete(x)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request;if(r.method!=='GET')return;var u=new URL(r.url);if(u.origin!==location.origin)return;
