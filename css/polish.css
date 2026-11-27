@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=69) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=70) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -193,8 +193,8 @@ html[data-theme=dark] .chips button.on,html[data-theme=dark] .tabs button.on,htm
 input,select,textarea{background:var(--soft)!important;border:0!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.08)!important}
 .starcard{border:0!important}
 /* eye only in the lens: remove pins and owl repeats */
-html body .item.note:before{display:none!important}
-.item.note{padding-top:14px!important}
+html body .item.note:before{display:block!important}
+.item.note{padding-top:22px!important}
 .starcard img{display:none!important}
 /* greys with red only for late */
 .av{background:#2B2B30!important;color:#fff!important}

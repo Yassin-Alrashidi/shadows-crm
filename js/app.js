@@ -321,7 +321,7 @@
     if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
     var p = document.createElement('div'); p.className = 'panel'; p.setAttribute('data-n', ('0' + (cur + 1)).replace(/[0-9]/g, function (c) { return document.documentElement.lang === 'ar' ? AD[c] : c; })); p.innerHTML = '<div class="eyebrow"><span>0' + (cur + 1) + ' / ' + (document.documentElement.lang === 'ar' ? T(id) : ENNAME[id]) + '</span></div>' + V[id]();
-    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = (I18N.lang === 'ar' ? '٠' : '0') + (I18N.lang === 'ar' ? AD[cur + 1] : (cur + 1));
+    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = ('0') + (I18N.lang === 'ar' ? AD[cur + 1] : (cur + 1));
     [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
     $('#addb').hidden = !QUICK[id]; bell();
@@ -342,7 +342,7 @@
   }
 
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
-  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 2064, FACE = [1032, 400], EYE = [959, 519], EYERING = 193;
+  var AD = '0123456789', intro = { step: 4, N: 4 }, OW = 2064, FACE = [1032, 400], EYE = [959, 519], EYERING = 193;
   function arDig(root) {
     if (I18N.lang !== 'ar' || !root) return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
     while ((n = w.nextNode())) { var v = n.nodeValue; if (/[0-9]/.test(v) && v.indexOf('@') < 0 && !/^[\s+\d()-]{7,}$/.test(v) && !(n.parentNode.closest && n.parentNode.closest('script,style,textarea,input'))) list.push(n); }
@@ -486,7 +486,7 @@
 
 
   /* ---------- expenses and advances ---------- */
-  function money(n) { var v = Number(n || 0); var s = v.toLocaleString(I18N.lang === 'ar' ? 'ar-EG' : 'en-US'); return s + ' ' + T('e.cur'); }
+  function money(n) { var v = Number(n || 0); var s = v.toLocaleString(I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'); return s + ' ' + T('e.cur'); }
   V.expenses = function () {
     var rows = mineOrAll(D.expenses), pend = rows.filter(function (r) { return r.status === 'pending'; }).length;
     var tot = rows.filter(function (r) { return r.status === 'approved' || r.status === 'settled'; }).reduce(function (s, r) { return s + Number(r.amount || 0); }, 0);
