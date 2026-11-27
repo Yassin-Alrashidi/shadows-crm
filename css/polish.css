@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=51) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=54) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}
@@ -163,3 +163,67 @@ html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:104px!important
 .pvt b{font-size:11.5px!important}
 .pvt.on,html[data-theme=dark] .pvt.on{background:transparent!important}
 html[data-theme=dark] .pvt{background:transparent!important}
+/* v52: simpler, stronger. fewer lines, solid weight */
+#view>h1+.sub{display:none}
+.bc .l{display:none}
+.bc{border:0!important;border-radius:22px;padding:20px 20px 18px;background:linear-gradient(145deg,#E11827,#8d0712)!important;color:#fff!important;box-shadow:0 14px 30px -12px rgba(225,24,39,.6)}
+.bc *{color:#fff!important}
+.bc .stamp{background:#08080A!important;color:#fff!important;border:0!important}
+.bc{font-weight:800;font-size:17px;line-height:1.4}
+.starcard{border:0!important;border-radius:22px;background:#0A0A0C!important;box-shadow:0 14px 30px -14px rgba(0,0,0,.7)}
+.starcard *{color:#fff!important}
+.starcard small{color:#ff4a58!important;font-weight:800;letter-spacing:.14em}
+.kpi{border:0!important;border-radius:22px;box-shadow:var(--sh2)}
+.kpi b{font-weight:900;font-size:44px}
+.kpi span{font-weight:800;font-size:12px}
+.kpi.red{box-shadow:0 14px 28px -10px rgba(225,24,39,.7)}
+.card,.cl,.note{border:0!important}
+/* v52 system: black + one red, rest grey. heavy type. one focal. no lines. eye only in the lens */
+html body .bc.urgent,html body .bc{background:linear-gradient(145deg,#E11827,#8d0712)!important;border:0!important}
+.sub{display:none!important}
+.panel>h1+.sub{display:none!important}
+.panel h1{font-weight:900!important;letter-spacing:.03em!important;font-size:34px!important}
+.panel h1:after{display:none!important}
+h2{font-weight:900!important;letter-spacing:.03em}
+/* no lines */
+*{border-color:transparent!important}
+.chips button,.tabs button,.seg button{border-bottom:0!important;border-bottom-width:0!important;border-radius:999px!important;padding:8px 14px!important}
+.chips button.on,.tabs button.on,.seg button.on,.chips .on,.tabs .on{background:#08080A!important;color:#fff!important}
+html[data-theme=dark] .chips button.on,html[data-theme=dark] .tabs button.on,html[data-theme=dark] .seg button.on,html[data-theme=dark] .chips .on,html[data-theme=dark] .tabs .on{background:#E11827!important}
+.panel hr,.panel .rule{display:none}
+input,select,textarea{background:var(--soft)!important;border:0!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.08)!important}
+.starcard{border:0!important}
+/* eye only in the lens: remove pins and owl repeats */
+html body .item.note:before{display:none!important}
+.item.note{padding-top:14px!important}
+.starcard img{display:none!important}
+/* greys with red only for late */
+.av{background:#2B2B30!important;color:#fff!important}
+html[data-theme=dark] .av{background:#3A3A41!important}
+html body .item.note.ny{background:#F1F0F1!important}
+html body .item.note.nb2{background:#DDDBDE!important}
+html body .item.note.ng{background:#F7F7F8!important;opacity:.75}
+html body .item.note.nr{background:#E11827!important}
+html body .item.note.nr,html body .item.note.nr *{color:#fff!important}
+html body .item.note.nr .pill{background:rgba(0,0,0,.28)!important}
+html[data-theme=dark] body .item.note.ny,html[data-theme=dark] .item.note.ny{background:#1D1D21!important}
+html[data-theme=dark] .item.note.nb2{background:#2B2B31!important}
+html[data-theme=dark] .item.note.ng{background:#141416!important}
+html[data-theme=dark] .item.note.nr{background:#B80F1C!important}
+.pill.done{background:var(--soft)!important;color:var(--fg)!important}
+.pill.urgent,.pill.late{background:#E11827!important;color:#fff!important}
+/* one focal on the dashboard: first tile big, rest small and calm */
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid .kpi:first-child{grid-column:1/-1;padding:26px 22px}
+.grid .kpi:first-child b{font-size:76px;line-height:1}
+.grid .kpi:not(:first-child){background:var(--soft)!important;box-shadow:none!important;padding:14px 12px}
+.grid .kpi:not(:first-child) b{font-size:26px;color:var(--fg)}
+.grid .kpi:not(:first-child) span{font-weight:700;font-size:10.5px;color:var(--mut)}
+.cd.sel{box-shadow:none!important;background:#E11827!important;color:#fff!important}
+.cd i,.cd b{background:#E11827!important}
+.cal .dot{background:#E11827!important}
+.bc .stamp,.bc .bcs{display:none!important}
+html body .grid .kpi.red{background:#0A0A0C!important;color:#fff!important;box-shadow:0 14px 28px -12px rgba(0,0,0,.6)!important}
+html body .grid .kpi.red b{color:#ff3b4a!important}
+html body .grid .kpi.red span{color:#fff!important}
+.grid{grid-template-columns:1fr 1fr}
