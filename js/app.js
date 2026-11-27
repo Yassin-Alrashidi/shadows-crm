@@ -255,7 +255,7 @@
   }
 
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
-  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 3096, FACE = [1548, 600], EYE = [1215, 600], EYERING = 240;
+  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 3096, FACE = [1548, 600], EYE = [1438, 778], EYERING = 290;
   function arDig(root) {
     if (I18N.lang !== 'ar' || !root) return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
     while ((n = w.nextNode())) { var v = n.nodeValue; if (/[0-9]/.test(v) && v.indexOf('@') < 0 && !/^[\s+\d()-]{7,}$/.test(v) && !(n.parentNode.closest && n.parentNode.closest('script,style,textarea,input'))) list.push(n); }
