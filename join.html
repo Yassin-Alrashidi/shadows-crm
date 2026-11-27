@@ -1,19 +1,20 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Shadows | انضم للفريق</title>
+<title>Shadows | Team Onboarding</title>
 <link rel="icon" href="assets/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('crm.theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){document.documentElement.dataset.theme='light'}</script>
+<script>document.documentElement.dataset.theme='dark'</script>
 <style>
 :root{--bg:#fff;--fg:#17161A;--mut:#6F6A72;--ln:#E4E0E2;--red:#E11827;--pk:#FDE7E9}
-html[data-theme=dark]{--bg:#0E0E10;--fg:#F2F0F1;--mut:#9A959C;--ln:#2A292E;--pk:#2C1015;color-scheme:dark}
+html[data-theme=dark]{--bg:#08080A;--fg:#F2F0F1;--mut:#9A959C;--ln:#2A292E;--pk:#2C1015;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.6 'Cairo',system-ui,sans-serif;min-height:100vh}
-main{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 20px 48px}
+main{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 20px 48px}
+.hero{width:100%;height:auto;border-radius:16px;display:block;margin:0 0 22px}
 .eye{width:72px;height:72px;border-radius:50%;display:block;margin:0 auto 14px}
 .brand{text-align:center;font:800 13px 'Cairo';letter-spacing:.32em;color:var(--mut);margin-bottom:22px}
 h1{font:800 26px/1.3 'Cairo';margin:0 0 6px;text-align:center}
@@ -25,8 +26,8 @@ input{width:100%;height:50px;margin-top:6px;padding:0 14px;font:400 16px 'Cairo'
 input:focus{border-color:var(--red)}
 input.bad{border-color:var(--red);background:var(--pk)}
 input.en{direction:ltr;text-align:left}
-.pw{position:relative;display:block}.pw input{padding-left:66px!important}
-.pw button{position:absolute;inset-inline-end:6px;top:12px;height:38px;padding:0 12px;border:0;background:transparent;color:var(--mut);font:600 13px 'Cairo';cursor:pointer}
+.pw{position:relative;display:block}.pw input{padding-right:70px!important}
+.pw button{position:absolute;right:6px;top:12px;height:38px;padding:0 12px;border:0;background:transparent;color:var(--mut);font:600 13px 'Cairo';cursor:pointer}
 .e{color:var(--red);font-size:13px;min-height:0;margin:4px 0 0;font-weight:400}
 .btn{width:100%;height:54px;border:0;border-radius:14px;background:var(--red);color:#fff;font:800 17px 'Cairo';cursor:pointer;margin-top:6px}
 .btn:disabled{opacity:.55}
@@ -40,51 +41,38 @@ input.en{direction:ltr;text-align:left}
 </head>
 <body>
 <main id="m">
-<img class="eye" src="assets/eye.webp?v=33" alt="" width="72" height="72">
-<div class="brand">SHADOWS</div>
+<img class="hero" src="assets/join-header.webp?v=35" alt="Shadows" width="1600" height="400">
 <form id="f" novalidate>
-<h1>انضم لفريق Shadows</h1>
-<p class="lead">املأ بياناتك مرة واحدة. بتاخد دقيقة.</p>
-<div class="g">
-<label>الاسم الأول<input class="en" name="n1" autocomplete="given-name" dir="ltr" placeholder="Yassin"><p class="e"></p></label>
-<label>الاسم الثاني<input class="en" name="n2" dir="ltr" placeholder="Ahmed"><p class="e"></p></label>
-<label>الاسم الثالث<input class="en" name="n3" dir="ltr" placeholder="Mohamed"><p class="e"></p></label>
-<label>اسم العيلة<input class="en" name="n4" autocomplete="family-name" dir="ltr" placeholder="Mostafa"><p class="e"></p></label>
-</div>
-<p class="note">الاسم بالإنجليزي، حروف إنجليزية فقط.</p>
-<label>الدلع <small>(اختياري)</small><input name="nick" autocomplete="nickname" maxlength="30"></label>
-<label>دورك في الشركة<input name="role" maxlength="60" placeholder="مثال: مصمم، مونتير، حسابات"><p class="e"></p></label>
-<label>الباسورد اللي عايزه للإيميل
+<h1>Welcome to Shadows</h1>
+<p class="lead">WE MOVE IN SILENCE. Fill this in once. Takes a minute.</p>
+<label>Your Name<input class="en" name="name" autocomplete="name" dir="ltr"><p class="e"></p></label>
+<label>If u had a nickname <small>(optional)</small><input name="nick" autocomplete="nickname" maxlength="30"></label>
+<label>What's your role in the company?<input class="en" name="role" maxlength="60" dir="ltr"><p class="e"></p></label>
+<label dir="rtl">الباسورد اللي تحب يكون لإيميلك في الشركة
 <span class="pw"><input class="en" name="pw" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><p class="e"></p></label>
-<label>أكّد الباسورد
-<span class="pw"><input class="en" name="pw2" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><p class="e"></p></label>
 <p class="e" id="top"></p>
-<button class="btn" id="go" type="submit">إرسال</button>
+<button class="btn" id="go" type="submit">Submit</button>
 </form>
-<div class="foot">WE MOVE IN SILENCE.</div>
+<div class="foot">SHADOWS | MEDIA &amp; ADVERTISING</div>
 </main>
-<script src="js/config.js?v=33"></script>
+<script src="js/config.js?v=35"></script>
 <script>
 (function(){
 var f=document.getElementById('f'),$=function(n){return f.elements[n]};
-var LAT=/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
 function err(n,m){var i=$(n);i.classList.toggle('bad',!!m);var p=i.closest('label').querySelector('.e');if(p)p.textContent=m||''}
 document.querySelectorAll('[data-show]').forEach(function(b){b.onclick=function(){var i=b.previousElementSibling,s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'إخفاء':'إظهار'}});
-['n1','n2','n3','n4'].forEach(function(n){$(n).addEventListener('input',function(){$(n).value=$(n).value.replace(/[^A-Za-z '\-]/g,'');err(n,'')})});
-['role','pw','pw2'].forEach(function(n){$(n).addEventListener('input',function(){err(n,'')})});
+['name','role','pw'].forEach(function(n){$(n).addEventListener('input',function(){err(n,'')})});
 function check(){
   var ok=true,v=function(n){return $(n).value.trim()};
-  ['n1','n2','n3','n4'].forEach(function(n){if(!v(n)){err(n,'مطلوب');ok=false}else if(!LAT.test(v(n))){err(n,'حروف إنجليزية فقط');ok=false}});
-  if(!v('role')){err('role','مطلوب');ok=false}
+  if(v('name').length<3){err('name','Required');ok=false}
+  if(!v('role')){err('role','Required');ok=false}
   var p=$('pw').value;
-  if(p.length<8||p.length>64){err('pw','من ٨ إلى ٦٤ حرف');ok=false}
-  if($('pw2').value!==p){err('pw2','الباسورد مش متطابق');ok=false}
+  if(p.length<8||p.length>64){err('pw','8 to 64 characters');ok=false}
   return ok}
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase()}
 f.addEventListener('submit',async function(e){
   e.preventDefault();if(!check())return;
   var v=function(n){return $(n).value.trim()};
-  var name=['n1','n2','n3','n4'].map(function(n){return cap(v(n))}).join(' ');
+  var name=v('name').replace(/\s+/g,' ');
   var meta={name:name,nickname:v('nick')||null,job_title:v('role')};
   var go=document.getElementById('go');go.disabled=true;go.textContent='...';
   var top=document.getElementById('top');top.textContent='';
@@ -102,10 +90,10 @@ f.addEventListener('submit',async function(e){
       var r=await fetch(base+'/rest/v1/join_responses',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},H),body:JSON.stringify({full_name:name,nickname:meta.nickname,job_title:meta.job_title,enc_password:enc})});
       if(!r.ok) throw new Error('fail');
     }
-    document.getElementById('m').innerHTML='<img class="eye" src="assets/eye.webp?v=33" alt="" width="72" height="72"><div class="ok"><b>تمام يا '+(meta.nickname||v('n1')).replace(/[<>&"]/g,'')+'</b><p>تم الاستلام. شكراً.</p></div><div class="foot">WE MOVE IN SILENCE.</div>';
+    document.getElementById('m').innerHTML='<img class="eye" src="assets/eye.webp?v=35" alt="" width="72" height="72"><div class="ok"><b>Welcome, '+(meta.nickname||name.split(' ')[0]).replace(/[<>&"]/g,'')+'</b><p>Received. Thank you.</p></div><div class="foot">WE MOVE IN SILENCE.</div>';
   }catch(x){
-    top.textContent=x.message==='closed'?'الفورم لسه مش مفتوح. جرّب بعدين.':'حصلت مشكلة. جرّب تاني.';
-    go.disabled=false;go.textContent='إرسال'}
+    top.textContent=x.message==='closed'?'The form is not open yet. Try again later.':'Something went wrong. Try again.';
+    go.disabled=false;go.textContent='Submit'}
 });
 })();
 </script>
