@@ -339,3 +339,18 @@ body:not(.intro) #dPupil{animation:ppulse 6s ease-in-out 1.5s 3}
 .item.dos .stamp{position:absolute;top:10px;inset-inline-end:10px;margin:0}
 .empty.e-tasks img{transform:scale(.9)}.empty.e-leaves img{transform:rotate(-7deg)}.empty.e-attend img{transform:scaleY(.8) translateY(8px)}
 .empty.e-clients img{transform:scaleX(-1)}.empty.e-resign img{transform:rotate(7deg) scale(.85);opacity:.6}.empty.e-me img{transform:rotate(-5deg) scale(1.05)}
+/* v24: calm, lens fixed bottom centre, safer owl layer */
+#hubbg #owl{contain:none;-webkit-backface-visibility:visible;backface-visibility:visible}
+html,body{background:#060608}
+body.intro #dial,body.intro #dial.press{transition:transform 1.2s cubic-bezier(.45,.05,.25,1)!important}
+.dialwrap{top:auto!important;bottom:calc(var(--sab) + 64px)!important;transform:translateX(-50%)!important;left:50%!important}
+#dial{width:min(230px,60vw)!important;height:min(230px,60vw)!important}
+.dialhint{top:calc(100% + 4px)!important}
+#dialcap{top:auto!important;bottom:calc(var(--sab) + 64px + min(230px,60vw) + 18px)!important;font-size:26px!important}
+html[lang=ar] #dialcap{font-size:28px!important}
+.cw{top:auto!important;bottom:calc(var(--sab) + 64px + min(230px,60vw) + 14px)!important}
+.pcard{bottom:calc(var(--sab) + 64px + min(230px,60vw) + 70px)!important}
+.stamp{animation-duration:.6s;animation-timing-function:ease-out}
+.dialwrap{position:fixed!important}
+body.intro #hubbg{background:#060608!important}
+#hubbg .hx,#hubbg .hy{display:none}

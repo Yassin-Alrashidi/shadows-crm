@@ -277,7 +277,7 @@
     var img = $('#owl'), d = $('#dial').getBoundingClientRect(); if (!d.width) return;
     var cx = d.left + d.width / 2, cy = d.top + d.height / 2, S0 = Math.min(innerWidth * 1.0 / OW, innerHeight * .8 / 1460), Sf = $('#dial').offsetWidth * .5 / EYERING;
     var t = step / intro.N, S = S0 * Math.pow(Sf / S0, t), e = Math.pow(t, 1.6), px = FACE[0] + (EYE[0] - FACE[0]) * e, py = FACE[1] + (EYE[1] - FACE[1]) * e;
-    img.style.transition = anim ? 'transform .9s cubic-bezier(.45,0,.2,1)' : 'none';
+    img.style.transition = anim ? 'transform 1.2s cubic-bezier(.45,.05,.25,1)' : 'none';
     img.style.transform = 'translate3d(' + (cx - px * S).toFixed(1) + 'px,' + (cy - py * S).toFixed(1) + 'px,0) scale(' + S.toFixed(4) + ')';
   }
   function introHint() {

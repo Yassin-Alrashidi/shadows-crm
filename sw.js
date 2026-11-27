@@ -1,5 +1,5 @@
-var C='shadows-crm-v23';
-var A=['./','index.html','css/app.css?v=23','js/config.js?v=23','js/i18n.js?v=23','js/store.js?v=23','js/dial.js?v=23','js/fx.js?v=23','js/app.js?v=23','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png'];
+var C='shadows-crm-v24';
+var A=['./','index.html','css/app.css?v=24','js/config.js?v=24','js/i18n.js?v=24','js/store.js?v=24','js/dial.js?v=24','js/fx.js?v=24','js/app.js?v=24','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(A)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==C}).map(function(x){return caches.delete(x)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request;if(r.method!=='GET')return;var u=new URL(r.url);if(u.origin!==location.origin)return;

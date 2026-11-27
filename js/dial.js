@@ -79,7 +79,7 @@
       var dir = i > cur ? 1 : i < cur ? -1 : 0; cur = i; o.onCommit(i, dir); caption();
     }
     var lidBase = 0;
-    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 240 }); if (Math.random() < .25) setTimeout(function () { lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 200 }); }, 300); setTimeout(blink, 3500 + Math.random() * 3500); }
+    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 340, easing: 'ease-in-out' }); if (Math.random() < .25) setTimeout(function () { lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 300, easing: 'ease-in-out' }); }, 300); setTimeout(blink, 3500 + Math.random() * 3500); }
     setTimeout(blink, 2500);
 
     var ccx = 0, ccy = 0, lastA = 0, total = 0, STEPDEG = 40;
@@ -100,7 +100,7 @@
       if (!moved) { moved = true; show(true); layoutWheel(); layoutCard(total > 0 ? 1 : -1); }
       var lo = -base * STEPDEG, hi = (n - 1 - base) * STEPDEG; total = Math.max(lo - 14, Math.min(hi + 14, total));
       var c = Math.max(0, Math.min(n - 1, base + Math.round(total / STEPDEG)));
-      setRot(base * STEPDEG + total, false); setPupil(Math.max(-9, Math.min(9, (total / STEPDEG) * 6)));
+      setRot(base * STEPDEG + total, false); setPupil(Math.max(-9, Math.min(9, (total / STEPDEG) * 3.5)));
       if (c !== cand) { var dir = c > cand ? 1 : -1; cand = c; lastDir = dir; layoutWheel(); layoutCard(dir); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (x) {} } }
     });
     function end() {
@@ -115,11 +115,11 @@
     });
     var gl = el.querySelector('#dGlint'), sc = el.querySelector('#dScan');
     function fx() {
-      if (gl.animate) { gl.animate([{ opacity: 0 }, { opacity: .75, offset: .3 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }); }
-      if (sc.animate) { sc.animate([{ opacity: 0, transform: 'translateY(0)' }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0, transform: 'translateY(88px)' }], { duration: 900, easing: 'cubic-bezier(.4,0,.2,1)' }); }
-      if (el.animate) el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: .3 }, { transform: 'scale(1)' }], { duration: 600 });
+      if (gl.animate) { gl.animate([{ opacity: 0 }, { opacity: .4, offset: .4 }, { opacity: 0 }], { duration: 1300, easing: 'ease-in-out' }); }
+      if (sc.animate) { sc.animate([{ opacity: 0, transform: 'translateY(0)' }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0, transform: 'translateY(88px)' }], { duration: 1500, easing: 'ease-in-out' }); }
+      if (el.animate) el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: .5 }, { transform: 'scale(1)' }], { duration: 1000, easing: 'ease-in-out' });
     }
-    function setLid(b) { if (b === lidBase) return; var from = lidBase; lidBase = b; lid.style.transform = 'scaleY(' + b + ')'; if (lid.animate) lid.animate([{ transform: 'scaleY(' + from + ')' }, { transform: 'scaleY(' + b + ')' }], { duration: 600, easing: 'ease-out' }); }
+    function setLid(b) { if (b === lidBase) return; var from = lidBase; lidBase = b; lid.style.transform = 'scaleY(' + b + ')'; if (lid.animate) lid.animate([{ transform: 'scaleY(' + from + ')' }, { transform: 'scaleY(' + b + ')' }], { duration: 1000, easing: 'ease-in-out' }); }
     return { setLid: setLid, fx: fx, set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
   };
   window.Dial.icon = icon;
