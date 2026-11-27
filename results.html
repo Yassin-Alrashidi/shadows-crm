@@ -25,9 +25,9 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}td,th{p
 <p>بيعمل مفتاحين في متصفحك. المفتاح العام بيتحفظ في الفورم، والخاص بينزل ملف عندك. احتفظ به، من غيره مفيش حد يقدر يقرأ الباسوردات، ولا أنا.</p>
 <button class="b g" id="gen">عمل المفاتيح</button>
 </main>
-<script src="js/config.js?v=33"></script>
+<script src="js/join-config.js?v=36"></script>
 <script>
-var C=window.CRM_CONFIG||{},$=function(i){return document.getElementById(i)},rows=[];
+var C=window.JOIN_CONFIG||{},$=function(i){return document.getElementById(i)},rows=[];
 var base=(C.supabaseUrl||'').replace(/\/$/,''),H={'apikey':C.supabaseKey,'Authorization':'Bearer '+C.supabaseKey,'Content-Type':'application/json'};
 function b64(b){return btoa(String.fromCharCode.apply(null,new Uint8Array(b)))}
 function unb(s){return Uint8Array.from(atob(s.replace(/\s/g,'')),function(c){return c.charCodeAt(0)})}
