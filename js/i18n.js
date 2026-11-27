@@ -16,7 +16,7 @@
       'log': 'سجل القرارات', 'd.approved': 'وافق على', 'd.rejected': 'رفض', 'd.accepted': 'قبل', 'd.leave': 'إجازة', 'd.resignation': 'استقالة', 'report': 'التقرير الأسبوعي', 'rep.period': 'آخر 7 أيام', 'rep.copy': 'انسخ التقرير', 'rep.copied': 'اتنسخ', 'rep.done': 'Tasks خلصت', 'rep.hours': 'ساعات حضور', 'rep.lv': 'إجازات منتظرة', 'rep.tot': 'الإجمالي', 'rep.line': 'تقرير الأسبوع جاهز', 'by.admin': 'من',
       'n.broadcast': 'بعت نداء عام', 'n.star': 'اختارك نجم الأسبوع', 'n.task_ack': 'خلّص Task من ناحيته', 'whole': 'الفريق كله', 'voice.rec': 'سجّل فويس', 'voice.stop': 'وقّف', 'voice.ok': 'الفويس جاهز', 'voice.rm': 'امسح', 'voice.deny': 'مقدرتش أفتح المايك. اسمح بالمايك من إعدادات المتصفح.', 'voice.none': 'المتصفح ده مش بيسجّل صوت.', 'voice.h': 'فويس نوت', 'team.done': 'خلّصوا', 'ack.mine': 'خلصت من ناحيتي', 'ack.ok': 'تمام، اتسجّلت',
       'bc.h': 'نداء عام', 'bc.new': 'ابعت نداء للفريق', 'bc.ph': 'اكتب الرسالة…', 'bc.urgent': 'مستعجل', 'bc.sent': 'وصل للفريق', 'star.h': 'نجم الأسبوع', 'star.pick': 'اختار نجم الأسبوع', 'star.badge': 'نجم الأسبوع', 'star.set': 'اتسجّل نجم الأسبوع', 'tag.full': 'SILENT WORK. LOUD RESULTS.',
-      'hi': 'أهلًا', 'hi.sub': 'ده ملخص يومك.', 'k.tasks': 'Tasks مفتوحة', 'k.leaves': 'إجازات منتظرة', 'k.clients': 'Clients شغّالين', 'k.pending': 'محتاجة قرارك',
+      'lens': 'العدسة', 'hi': 'أهلًا', 'hi.sub': 'ده ملخص يومك.', 'k.tasks': 'Tasks مفتوحة', 'k.leaves': 'إجازات منتظرة', 'k.clients': 'Clients شغّالين', 'k.pending': 'محتاجة قرارك',
       'k.balance': 'رصيد الإجازات السنوية', 'days': 'يوم', 'recent': 'آخر الحركات', 'none': 'مفيش حاجة هنا لسه.',
       'new': 'جديد', 'new.task': 'Task جديدة', 'new.leave': 'طلب إجازة', 'new.client': 'Client جديد', 'new.resign': 'تقديم استقالة',
       'f.title': 'العنوان', 'f.cat': 'النوع', 'f.prio': 'الأولوية', 'f.desc': 'التفاصيل', 'f.type': 'نوع الإجازة', 'f.from': 'من', 'f.to': 'إلى', 'f.reason': 'السبب (اختياري)',
@@ -36,7 +36,7 @@
       'resign.intro': 'هنا تقدر تقدّم استقالتك بشكل رسمي ومحترم.', 'resign.last': 'آخر يوم', 'from.whom': 'صاحب الطلب',
       'dayn': 'أيام', 'profile': 'الملف الشخصي', 'lang': 'English', 'logout': 'خروج', 'role': 'الدور', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Team',
       'team.h': 'الـ Team', 'install': 'ضيف التطبيق على شاشتك: من المتصفح اختار "إضافة إلى الشاشة الرئيسية".',
-      'dial.hint': 'اسحب العين يمين وشمال', 'dial.tap': 'اضغط للإضافة', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
+      'dial.hint': 'لفّ العدسة يمين وشمال وسيبها', 'dial.tap': 'اضغط للإضافة', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
       'balance.of': 'من', 'used': 'اتاخد', 'offline': 'مفيش إنترنت'
     },
     en: {
@@ -53,7 +53,7 @@
       'log': 'Decision log', 'd.approved': 'approved', 'd.rejected': 'rejected', 'd.accepted': 'accepted', 'd.leave': 'leave', 'd.resignation': 'resignation', 'report': 'Weekly report', 'rep.period': 'Last 7 days', 'rep.copy': 'Copy report', 'rep.copied': 'Copied', 'rep.done': 'Tasks done', 'rep.hours': 'Attendance hours', 'rep.lv': 'Pending leaves', 'rep.tot': 'Total', 'rep.line': 'This week\'s report is ready', 'by.admin': 'By',
       'n.broadcast': 'sent a broadcast', 'n.star': 'picked you as star of the week', 'n.task_ack': 'finished a Task on their side', 'whole': 'Whole team', 'voice.rec': 'Record voice', 'voice.stop': 'Stop', 'voice.ok': 'Voice note ready', 'voice.rm': 'Remove', 'voice.deny': 'Could not open the microphone. Allow it in browser settings.', 'voice.none': 'This browser cannot record audio.', 'voice.h': 'Voice notes', 'team.done': 'done', 'ack.mine': 'I finished my part', 'ack.ok': 'Done, recorded',
       'bc.h': 'Broadcast', 'bc.new': 'Send a broadcast to the team', 'bc.ph': 'Write the message…', 'bc.urgent': 'Urgent', 'bc.sent': 'Sent to the team', 'star.h': 'Star of the week', 'star.pick': 'Pick the star of the week', 'star.badge': 'Star of the week', 'star.set': 'Star of the week saved', 'tag.full': 'SILENT WORK. LOUD RESULTS.',
-      'hi': 'Hello', 'hi.sub': 'Here is your day.', 'k.tasks': 'Open tasks', 'k.leaves': 'Pending leaves', 'k.clients': 'Active clients', 'k.pending': 'Waiting for you',
+      'lens': 'The lens', 'hi': 'Hello', 'hi.sub': 'Here is your day.', 'k.tasks': 'Open tasks', 'k.leaves': 'Pending leaves', 'k.clients': 'Active clients', 'k.pending': 'Waiting for you',
       'k.balance': 'Annual leave balance', 'days': 'days', 'recent': 'Recent activity', 'none': 'Nothing here yet.',
       'new': 'New', 'new.task': 'New task', 'new.leave': 'Request leave', 'new.client': 'New client', 'new.resign': 'Submit resignation',
       'f.title': 'Title', 'f.cat': 'Category', 'f.prio': 'Priority', 'f.desc': 'Details', 'f.type': 'Leave type', 'f.from': 'From', 'f.to': 'To', 'f.reason': 'Reason (optional)',
@@ -73,7 +73,7 @@
       'resign.intro': 'Submit your resignation formally and respectfully.', 'resign.last': 'Last day', 'from.whom': 'Requested by',
       'dayn': 'days', 'profile': 'Profile', 'lang': 'العربية', 'logout': 'Sign out', 'role': 'Role', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Employee',
       'team.h': 'Team members', 'install': 'Add the app to your home screen: use "Add to Home Screen" in the browser menu.',
-      'dial.hint': 'Drag the eye left or right', 'dial.tap': 'Tap to add', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
+      'dial.hint': 'Turn the lens left or right, then let go', 'dial.tap': 'Tap to add', 'overlap': 'These dates overlap another leave of yours.', 'baddates': 'The end date must be after the start.',
       'balance.of': 'of', 'used': 'used', 'offline': 'Offline'
     }
   };

@@ -52,10 +52,10 @@
       if (card.animate) card.animate([{ transform: 'translateX(' + (dir * 46) + 'px) scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1)' });
     }
     function show(on) { cands.classList.toggle('on', on); document.body.classList.toggle('dialing', on); el.classList.toggle('drag', on); }
-    function caption() { cap.textContent = items[cur].label(); cap.classList.add('on'); clearTimeout(capT); capT = setTimeout(function () { cap.classList.remove('on'); }, 1500); }
+    function caption() { cap.textContent = items[cur].label(); cap.classList.add('on'); }
     function commit(i) {
       var changed = i !== cur; show(false); setPupil(0); rot = i * 40; setRot(rot, true);
-      if (changed) { var dir = i > cur ? 1 : -1; cur = i; o.onCommit(i, dir); caption(); } else caption();
+      var dir = i > cur ? 1 : i < cur ? -1 : 0; cur = i; o.onCommit(i, dir); caption();
     }
     function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 240 }); setTimeout(blink, 3500 + Math.random() * 3500); }
     setTimeout(blink, 2500);
@@ -84,7 +84,7 @@
       if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); }
       else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (o.onTap) o.onTap(); }
     });
-    return { set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); }, caption: caption, icon: icon };
+    return { set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
   };
   window.Dial.icon = icon;
 })();

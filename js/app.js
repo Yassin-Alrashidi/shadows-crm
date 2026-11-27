@@ -76,14 +76,14 @@
     var seen = {}; return Promise.all(ids.filter(function (x) { if (!x || x === me.id || seen[x]) return false; seen[x] = 1; return true; }).map(function (uid) { return Store.insert('notifications', { user_id: uid, kind: kind, ref: ref, subject: subject || '', actor: me.id, read: false }); }));
   }
   var unread = function () { return D.notifications.filter(function (n) { return n.user_id === me.id && !n.read; }); };
-  function bell() { var n = unread().length, b = $('#belln'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n; }
+  function bell() { var n = unread().length, b = $('#belln'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n; $('#burgerdot').hidden = !n; }
   function notifText(n) { var sub = n.subject; if (n.kind === 'leave_req') sub = T('lt.' + n.subject); else if (n.kind === 'leave_decided' || n.kind === 'resign_decided') sub = T('d.' + n.subject); return esc(nameOf(n.actor)) + ' ' + T('n.' + n.kind) + (sub ? ': ' + esc(sub) : ''); }
   function notifCenter() {
     var rows = D.notifications.filter(function (n) { return n.user_id === me.id; }).slice(0, 40);
     openSheet('<h2>' + T('bell') + '</h2>' + (rows.length ? rows.map(function (n) { return '<button class="item' + (n.read ? '' : ' unread') + '" data-nref="' + esc(n.ref || 'home') + '"><div class="t">' + notifText(n) + '</div><div class="m"><span>' + I18N.ago(n.created_at) + '</span></div></button>'; }).join('') + (unread().length ? '<button class="btn ghost" id="nread">' + T('n.markread') + '</button>' : '') : EMPTY()));
     if ($('#nread')) $('#nread').onclick = function () { act(function () { return Promise.all(unread().map(function (n) { return Store.update('notifications', n.id, { read: true }); })); }).then(closeSheet); };
   }
-  $('#bell').onclick = notifCenter;
+  $('#bell').onclick = function () { closeMenu(); notifCenter(); };
   function acked(t, uid) { return D.task_ack.some(function (x) { return x.task_id === t.id && x.user_id === uid; }); }
   function isLate(t) { return t.due_date && t.status !== 'done' && t.due_date < new Date().toISOString().slice(0, 10); }
   function isSoon(t) { var d = new Date().toISOString().slice(0, 10), tm = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return t.due_date && t.status !== 'done' && t.due_date >= d && t.due_date <= tm; }
@@ -225,22 +225,45 @@
   };
 
   /* ---------- render + transitions ---------- */
+  var inPanel = false, QUICK = { tasks: 1, leaves: 1, clients: 1, resign: 1 };
   function render(dir) {
+    if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
     var p = document.createElement('div'); p.className = 'panel'; p.innerHTML = '<div class="eyebrow">0' + (cur + 1) + ' / ' + ENNAME[id] + '</div>' + V[id]();
     var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id;
     [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
-    $('#title').textContent = T(id); bell();
+    $('#addb').hidden = !QUICK[id]; bell();
     if (old) {
-      if (dir && old.animate) {
+      if (dir && dir !== 'open' && old.animate) {
         var x = dir * 60; old.style.pointerEvents = 'none';
         old.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(' + (-x) + 'px)', opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }).onfinish = function () { old.remove(); };
         p.animate([{ transform: 'translateX(' + x + 'px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1)' });
       } else old.remove();
-    }
+    } else if (dir === 'open' && p.animate) p.animate([{ transform: 'scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
   }
-  function goto(i, dir) { if (i === cur) return; var d = dir || (i > cur ? 1 : -1); if (document.documentElement.dir === 'rtl') d = -d; cur = i; render(d); if (dial) dial.set(i); }
+  function openPanel(anim) { if (!inPanel) { history.pushState({ p: 1 }, ''); } inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
+  function showHub(noBack) {
+    if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); $('#addb').hidden = true;
+    var stage = $('#stage'); [].slice.call(stage.querySelectorAll('.panel')).forEach(function (o) { if (o.animate) { o.style.pointerEvents = 'none'; o.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 240, fill: 'forwards' }).onfinish = function () { o.remove(); }; } else o.remove(); });
+    if (dial) dial.set(cur);
+  }
+  window.addEventListener('popstate', function () { if (inPanel) showHub(true); });
+  function goto(i, dir) {
+    if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(i); return; }
+    if (i === cur) return; var d = dir || (i > cur ? 1 : -1); if (document.documentElement.dir === 'rtl') d = -d; cur = i; render(d); if (dial) dial.set(i);
+  }
+  /* menu */
+  function buildMenu() {
+    $('#menulist').innerHTML = '<button class="menuitem hub" data-mi="hub"><span class="mn">00</span><span class="mi">' + T('lens') + '</span></button>' + ORDER.map(function (id, i) { return '<button class="menuitem' + (inPanel && cur === i ? ' on' : '') + '" data-mi="' + i + '"><span class="mn">0' + (i + 1) + '</span><span class="mi">' + T(id) + '</span></button>'; }).join('');
+    $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout');
+  }
+  function openMenu() { buildMenu(); $('#menu').classList.add('on'); $('#menubg').classList.add('on'); }
+  function closeMenu() { $('#menu').classList.remove('on'); $('#menubg').classList.remove('on'); }
+  $('#burger').onclick = openMenu; $('#menuclose').onclick = closeMenu; $('#menubg').onclick = closeMenu;
+  $('#menulist').onclick = function (e) { var b = e.target.closest('[data-mi]'); if (!b) return; closeMenu(); var v = b.dataset.mi; if (v === 'hub') { if (inPanel) { history.back(); } } else goto(+v); };
+  $('#mout2').onclick = function () { closeMenu(); logout(); };
+  $('#addb').onclick = function () { quickAdd(); };
 
   /* ---------- forms ---------- */
   function f(sel) { return ($(sel, $('#sheetin')) || {}).value || ''; }
@@ -367,9 +390,9 @@
   $('#stage').addEventListener('click', function (e) { var ab = e.target.closest('#attbtn'); if (ab) return toggleAttend(); var b = e.target.closest('#mlang'), o = e.target.closest('#mout'); if (b) toggleLang(); if (o) logout(); });
 
   function toggleAttend() { var open = D.attendance.filter(function (r) { return r.user_id === me.id && !r.check_out; })[0]; act(function () { return open ? Store.update('attendance', open.id, { check_out: new Date().toISOString() }) : Store.insert('attendance', {}); }, open ? 'att.bye' : 'att.hi'); }
-  function quickAdd() { var id = ORDER[cur]; if (id === 'attend') return toggleAttend(); if (id === 'tasks' || id === 'home') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); }
-  function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); $('#dialhint').textContent = T('dial.hint'); } }
-  function chrome() { applyText(); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
+  function quickAdd() { var id = ORDER[cur]; if (id === 'tasks') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); }
+  function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); buildMenu(); if (dial) dial.set(cur); } }
+  function chrome() { applyText(); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
   $('#applang').onclick = toggleLang; $('#authlang').onclick = toggleLang;
 
   /* ---------- auth ---------- */
@@ -385,13 +408,13 @@
   };
   if (Store.mode === 'demo') $('#demobtn').hidden = false;
   $('#demobtn').onclick = async function () { me = await Store.demoSeed(); enter(); };
-  async function logout() { await Store.signOut(); me = null; $('#app').hidden = true; $('#auth').hidden = false; chrome(); }
+  async function logout() { await Store.signOut(); me = null; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = ''; $('#app').hidden = true; $('#auth').hidden = false; chrome(); }
 
   async function enter() {
-    $('#auth').hidden = true; $('#app').hidden = false; cur = 0; $('#stage').innerHTML = '';
+    $('#auth').hidden = true; $('#app').hidden = false; cur = 0; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = '';
     me = Store.me() || me; await load(); me = (profiles.filter(function (p) { return p.id === me.id; })[0]) || me; chrome();
     var items = ORDER.map(function (id) { return { id: id, label: function () { return T(id); }, sub: function () { return id === 'home' ? '' : id === 'me' ? T('profile') : T('dial.tap'); } }; });
-    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i, dir) { cur = i; render(document.documentElement.dir === 'rtl' ? -dir : dir); }, onTap: quickAdd });
+    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i) { cur = i; openPanel('open'); }, onTap: function () { openPanel('open'); } });
     else dial.set(0);
     if (Store.mode === 'live' && !enter.poll) enter.poll = setInterval(function () {
       if (!me || document.visibilityState !== 'visible') return;
@@ -401,7 +424,7 @@
         else { D.notifications = rows; bell(); }
       }).catch(function () {});
     }, 20000);
-    $('#dialhint').textContent = T('dial.hint'); render(0); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
+    $('#dialhint').textContent = T('dial.hint'); dial.set(0); buildMenu(); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
   }
 
   /* ---------- boot ---------- */
