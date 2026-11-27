@@ -22,9 +22,12 @@
     items.forEach(function (it, i) {
       h += '<b class="tk" style="transform:rotate(' + (i * STEP - STEP / 2) + 'deg)"></b><button type="button" class="wi" data-i="' + i + '" aria-label="' + it.label() + '" style="transform:rotate(' + (i * STEP) + 'deg) translateY(-' + RHO + 'px)"><span style="transform:rotate(0deg)">' + icon(it.id, 24, 1.8) + '</span></button>';
     });
-    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i><svg class="oeye" viewBox="0 0 80 44" aria-hidden="true"><path d="M4 22 Q40 -3 76 22 Q40 47 4 22Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><g id="eIris"><circle cx="40" cy="22" r="10" fill="rgba(255,255,255,.16)" stroke="#fff" stroke-width="2"/><circle id="ePup" cx="40" cy="22" r="4.2" fill="#fff"/></g></svg></div><div class="dlabel" id="dlabel"></div>';
+    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i></div><button type="button" class="eyebtn" id="eyebtn" aria-label="Menu"><svg  viewBox="0 0 80 44" aria-hidden="true"><path d="M4 22 Q40 -3 76 22 Q40 47 4 22Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><g id="eIris"><circle cx="40" cy="22" r="10" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="2"/><circle id="ePup" cx="40" cy="22" r="4.2" fill="currentColor"/></g></svg></button><div class="dlabel" id="dlabel"></div>';
     el.innerHTML = h;
     var wheel = el.querySelector('#wheel'), lab = el.querySelector('#dlabel'), btns = [].slice.call(el.querySelectorAll('.wi'));
+    var open = false, idle = null, lastClose = 0, eb = el.querySelector('#eyebtn');
+    function setOpen(v) { open = v; el.classList.toggle('open', v); clearTimeout(idle); if (v) idle = setTimeout(function () { setOpen(false); lab.classList.remove('on'); }, 3500); else lastClose = Date.now(); }
+    eb.addEventListener('click', function () { if (!open && Date.now() - lastClose > 350) setOpen(true); });
     var dragging = false, moved = false, sx = 0, startRot = 0, iris = el.querySelector('#eIris'), pup = el.querySelector('#ePup');
     function lean(x) { pup.style.transition = x ? 'none' : 'transform .35s ease'; pup.style.transform = 'translateX(' + x.toFixed(1) + 'px)'; }
     function blink() { if (iris.animate && !dragging) iris.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.08)', offset: .5 }, { transform: 'scaleY(1)' }], { duration: 420, easing: 'ease-in-out' }); setTimeout(blink, 6000 + Math.random() * 5000); }
@@ -34,7 +37,7 @@
     function say(i, on) { lab.textContent = items[i].label(); lab.classList.toggle('on', !!on); }
     function commit(i) { var dir = i > cur ? 1 : i < cur ? -1 : 0, ch = i !== cur; cur = i; cand = i; mark(i); put(i * STEP, true); lab.classList.remove('on'); if (ch) o.onCommit(i, dir); }
     put(cur * STEP, false); mark(cur);
-    el.addEventListener('pointerdown', function (e) { dragging = true; moved = false; sx = e.clientX; startRot = cur * STEP; cand = cur; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+    el.addEventListener('pointerdown', function (e) { if (!open) return; clearTimeout(idle); dragging = true; moved = false; sx = e.clientX; startRot = cur * STEP; cand = cur; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
     el.addEventListener('pointermove', function (e) {
       if (!dragging) return; var dx = e.clientX - sx;
       if (!moved && Math.abs(dx) < 6) return; moved = true;
@@ -44,8 +47,8 @@
     });
     function end(e) {
       if (!dragging) return; dragging = false; lean(0);
-      if (moved) { commit(cand); return; }
-      var b = e && e.target && e.target.closest ? e.target.closest('.wi') : null; if (b) commit(+b.dataset.i);
+      if (moved) { commit(cand); setOpen(true); return; }
+      var b = e && e.target && e.target.closest ? e.target.closest('.wi') : null; if (b) { commit(+b.dataset.i); setOpen(true); } else if (e && e.target && e.target.closest && e.target.closest('#eyebtn')) setOpen(false); else setOpen(true);
     }
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); } });
