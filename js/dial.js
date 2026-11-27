@@ -78,7 +78,8 @@
       var changed = i !== cur; show(false); setPupil(0); rot = i * 40; setRot(rot, true);
       var dir = i > cur ? 1 : i < cur ? -1 : 0; cur = i; o.onCommit(i, dir); caption();
     }
-    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 240 }); if (Math.random() < .25) setTimeout(function () { lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 200 }); }, 300); setTimeout(blink, 3500 + Math.random() * 3500); }
+    var lidBase = 0;
+    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 240 }); if (Math.random() < .25) setTimeout(function () { lid.animate([{ transform: 'scaleY(' + lidBase + ')' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(' + lidBase + ')' }], { duration: 200 }); }, 300); setTimeout(blink, 3500 + Math.random() * 3500); }
     setTimeout(blink, 2500);
 
     var ccx = 0, ccy = 0, lastA = 0, total = 0, STEPDEG = 40;
@@ -118,7 +119,8 @@
       if (sc.animate) { sc.animate([{ opacity: 0, transform: 'translateY(0)' }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0, transform: 'translateY(88px)' }], { duration: 900, easing: 'cubic-bezier(.4,0,.2,1)' }); }
       if (el.animate) el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: .3 }, { transform: 'scale(1)' }], { duration: 600 });
     }
-    return { fx: fx, set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
+    function setLid(b) { if (b === lidBase) return; var from = lidBase; lidBase = b; lid.style.transform = 'scaleY(' + b + ')'; if (lid.animate) lid.animate([{ transform: 'scaleY(' + from + ')' }, { transform: 'scaleY(' + b + ')' }], { duration: 600, easing: 'ease-out' }); }
+    return { setLid: setLid, fx: fx, set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
   };
   window.Dial.icon = icon;
 })();

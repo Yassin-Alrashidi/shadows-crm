@@ -321,3 +321,21 @@ html[lang=ar] .stamp{font:700 13px 'Reem Kufi',Cairo;letter-spacing:.02em}
 .panel[data-n]:before{content:attr(data-n);position:fixed;right:-2vw;top:14vh;font:900 46vw/1 'Archivo Black',Archivo,'Reem Kufi',sans-serif;color:var(--red);opacity:.05;pointer-events:none;z-index:-1;letter-spacing:-.04em}
 .owlm{vertical-align:-3px;margin-inline-start:4px}
 .starcard{border-color:rgba(225,24,39,.6)!important;outline:1px solid rgba(225,24,39,.25);outline-offset:3px}
+
+/* v22 perf + batch 2: static, transform-only */
+#dial,#dial.drag,body.intro #dial{filter:none!important}
+.dialwrap{position:relative}
+.dialwrap:before{content:"";position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(225,24,39,.38),transparent 72%);pointer-events:none;z-index:-1}
+body.intro .dialwrap:before{display:none}
+body:not(.intro) #dPupil{animation:ppulse 6s ease-in-out 1.5s 3}
+.bc{position:relative}.bc .bcs{position:absolute;top:10px;inset-inline-end:12px;margin:0;font-size:12px;transform:rotate(-8deg);animation:none}
+.bc.urgent .bcs{background:var(--red);color:#fff}
+.wv{display:flex;align-items:center;gap:2px;height:30px;margin:6px 0}.wv i{flex:1;max-width:5px;background:linear-gradient(#ff5a50,#910814);border-radius:2px}
+.rp{border-top:3px solid var(--red);padding-top:8px;margin-bottom:10px}.rp small{display:block;font:600 10px var(--mono);letter-spacing:.3em;color:var(--red)}
+.rp h2{font:900 40px/1 'Archivo Black',Archivo,'Reem Kufi',sans-serif;text-transform:uppercase;font-style:italic;margin:8px 0 4px}
+.rpk .kpi b{font:900 44px/1 'Archivo Black',Archivo,'Reem Kufi',sans-serif}.rpk .kpi.red b{color:var(--red)}
+.item.dos{position:relative;border-inline-start:4px solid var(--red);border-radius:2px 14px 14px 2px;padding-top:18px;background:linear-gradient(#121216,#0c0c0f)}
+.item.dos:before{content:"";position:absolute;top:-1px;inset-inline-start:14px;width:54px;height:8px;background:var(--red);border-radius:0 0 4px 4px}
+.item.dos .stamp{position:absolute;top:10px;inset-inline-end:10px;margin:0}
+.empty.e-tasks img{transform:scale(.9)}.empty.e-leaves img{transform:rotate(-7deg)}.empty.e-attend img{transform:scaleY(.8) translateY(8px)}
+.empty.e-clients img{transform:scaleX(-1)}.empty.e-resign img{transform:rotate(7deg) scale(.85);opacity:.6}.empty.e-me img{transform:rotate(-5deg) scale(1.05)}

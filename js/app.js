@@ -55,7 +55,7 @@
   function allIds() { return profiles.map(function (p) { return p.id; }); }
   function banners() {
     var h = '', bc = D.broadcasts.filter(function (b) { return Date.now() - new Date(b.created_at) < 48 * 36e5; })[0], st = curStar();
-    if (bc) h += '<div class="bc' + (bc.urgent ? ' urgent' : '') + '"><div class="l">' + T('bc.h') + (bc.urgent ? ' · ' + T('bc.urgent') : '') + '</div><div>' + esc(bc.body) + '</div><small style="color:var(--ash)">' + esc(nameOf(bc.from_user)) + ' · ' + I18N.ago(bc.created_at) + '</small></div>';
+    if (bc) h += '<div class="bc' + (bc.urgent ? ' urgent' : '') + '"><span class="stamp bcs">' + (bc.urgent ? T('bc.urgent') : T('bc.h')) + '</span><div class="l">' + T('bc.h') + (bc.urgent ? ' · ' + T('bc.urgent') : '') + '</div><div>' + esc(bc.body) + '</div><small style="color:var(--ash)">' + esc(nameOf(bc.from_user)) + ' · ' + I18N.ago(bc.created_at) + '</small></div>';
     if (st) h += '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small><div class="t" style="font-weight:800;font-size:18px">' + esc(nameOf(st.user_id)) + ' ' + OWLM + '</div></div></div>';
     if (isMgr()) h += '<div class="acts" style="margin:0 0 12px"><button class="btn" data-act="bcast">' + T('bc.new') + '</button><button class="btn" data-act="star">' + T('star.pick') + '</button></div>';
     return h;
@@ -86,7 +86,15 @@
   $('#bell').onclick = function () { closeMenu(); notifCenter(); };
   function acked(t, uid) { return D.task_ack.some(function (x) { return x.task_id === t.id && x.user_id === uid; }); }
   var OWLM = '<svg class="owlm" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 5l5 3 4-2 4 2 5-3-1 8-4 7h-8l-4-7z" fill="#e11827"/><circle cx="9" cy="11" r="2.2" fill="#060608"/><circle cx="15" cy="11" r="2.2" fill="#060608"/></svg>';
+  function wave(seed) { var w = document.createElement('div'), s = 0, i, h = ''; w.className = 'wv'; String(seed).split('').forEach(function (c) { s = (s * 31 + c.charCodeAt(0)) % 9973; });
+    for (i = 0; i < 32; i++) { s = (s * 131 + 17) % 9973; h += '<i style="height:' + (18 + s % 70) + '%"></i>'; } w.innerHTML = h; return w; }
   function stamp(s) { return s === 'approved' || s === 'rejected' ? '<span class="stamp ' + (s === 'approved' ? 'ok' : 'no') + '">' + T('ls.' + s) + '</span>' : ''; }
+  function eyeState() {
+    if (!dial || !dial.setLid || !me) return;
+    var on = D.attendance.some(function (r) { return r.user_id === me.id && !r.check_out; });
+    var soon = D.tasks.some(function (t) { return t.status !== 'done' && (t.assigned_to === me.id || t.team) && t.due_date && t.due_date <= new Date(Date.now() + 864e5).toISOString().slice(0, 10); });
+    dial.setLid(!on ? .72 : soon ? .3 : 0);
+  }
   function isLate(t) { return t.due_date && t.status !== 'done' && t.due_date < new Date().toISOString().slice(0, 10); }
   function isSoon(t) { var d = new Date().toISOString().slice(0, 10), tm = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return t.due_date && t.status !== 'done' && t.due_date >= d && t.due_date <= tm; }
   function logDecision(kind, row, st, note) {
@@ -120,13 +128,13 @@
     var rows = reportData(), tot = rows.reduce(function (s, r) { return { done: s.done + r.done, late: s.late + r.late, hours: s.hours + r.hours, lv: s.lv + r.lv }; }, { done: 0, late: 0, hours: 0, lv: 0 });
     var line = function (r) { return r.name + ': ' + T('rep.done') + ' ' + r.done + ' · ' + T('prof.late') + ' ' + r.late + ' · ' + T('rep.hours') + ' ' + r.hours.toFixed(1) + ' · ' + T('rep.lv') + ' ' + r.lv; };
     var text = T('report') + ' (' + T('rep.period') + ')\n' + rows.map(line).join('\n') + '\n' + T('rep.tot') + ': ' + T('rep.done') + ' ' + tot.done + ' · ' + T('prof.late') + ' ' + tot.late + ' · ' + T('rep.hours') + ' ' + tot.hours.toFixed(1);
-    openSheet('<h2>' + T('report') + '</h2><p class="sub">' + T('rep.period') + '</p><div class="two3"><div class="kpi"><b>' + tot.done + '</b><span>' + T('rep.done') + '</span></div><div class="kpi red"><b>' + tot.late + '</b><span>' + T('prof.late') + '</span></div><div class="kpi"><b>' + tot.hours.toFixed(0) + '</b><span>' + T('rep.hours') + '</span></div></div>' +
+    openSheet('<div class="rp"><small>SHADOWS | WE MOVE IN SILENCE.</small><h2>' + T('report') + '</h2><p class="sub">' + T('rep.period') + '</p></div><div class="two3 rpk"><div class="kpi"><b>' + tot.done + '</b><span>' + T('rep.done') + '</span></div><div class="kpi red"><b>' + tot.late + '</b><span>' + T('prof.late') + '</span></div><div class="kpi"><b>' + tot.hours.toFixed(0) + '</b><span>' + T('rep.hours') + '</span></div></div>' +
       rows.map(function (r) { return '<div class="card"><div class="row"><b>' + esc(r.name) + '</b><span class="pill ' + (r.late ? 'urgent' : 'done') + '">' + r.late + ' ' + T('prof.late') + '</span></div><div class="m" style="color:var(--ash);margin-top:6px;font-size:13px">' + T('rep.done') + ' ' + r.done + ' · ' + r.hours.toFixed(1) + ' ' + T('prof.hours') + ' · ' + T('rep.lv') + ' ' + r.lv + '</div></div>'; }).join('') + '<button class="btn big" id="repcopy">' + T('rep.copy') + '</button>');
     $('#repcopy').onclick = function () { try { navigator.clipboard.writeText(text).then(function () { toast(T('rep.copied')); }); } catch (e) {} };
   }
   function logSheet() {
     var rows = D.decisions.slice(0, 60);
-    openSheet('<h2>' + T('log') + '</h2>' + (rows.length ? rows.map(function (d) { return '<div class="item" style="cursor:default"><div class="t">' + esc(nameOf(d.decided_by)) + ' ' + T('d.' + d.decision) + ' ' + T('d.' + d.kind) + ' · ' + esc(nameOf(d.subject_user)) + '</div><div class="m"><span>' + I18N.date(d.created_at) + ' ' + hm(d.created_at) + '</span>' + (d.note ? '<span>' + esc(d.note) + '</span>' : '') + '</div></div>'; }).join('') : EMPTY()));
+    openSheet('<h2>' + T('log') + '</h2>' + (rows.length ? rows.map(function (d) { return '<div class="item dos" style="cursor:default">' + stamp(d.decision) + '<div class="t">' + esc(nameOf(d.decided_by)) + ' ' + T('d.' + d.decision) + ' ' + T('d.' + d.kind) + ' · ' + esc(nameOf(d.subject_user)) + '</div><div class="m"><span>' + I18N.date(d.created_at) + ' ' + hm(d.created_at) + '</span>' + (d.note ? '<span>' + esc(d.note) + '</span>' : '') + '</div></div>'; }).join('') : EMPTY()));
   }
 
   /* ---------- data ---------- */
@@ -139,7 +147,7 @@
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
-  var EMPTY = function () { return '<div class="empty"><img src="assets/owl-wings.webp" alt=""><div>' + T('none') + '</div><small>SILENT WORK.</small></div>'; };
+  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><img src="assets/' + (['tasks', 'clients', 'me'].indexOf(ORDER[cur]) > -1 ? 'owl-head' : 'owl-wings') + '.webp" alt=""><div>' + T('none') + '</div><small>SILENT WORK.</small></div>'; };
   var ENNAME = { home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
   var V = {};
   V.home = function () {
@@ -248,7 +256,7 @@
   function showHub(noBack) {
     if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); setTimeout(function () { owlXf(intro.step, false); }, 0); $('#addb').hidden = true;
     var stage = $('#stage'); [].slice.call(stage.querySelectorAll('.panel')).forEach(function (o) { if (o.animate) { o.style.pointerEvents = 'none'; o.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 240, fill: 'forwards' }).onfinish = function () { o.remove(); }; } else o.remove(); });
-    if (dial) dial.set(cur);
+    if (dial) dial.set(cur); eyeState();
     if (window.__fx && dial && dial.fx) { window.__fx = 0; setTimeout(dial.fx, 450); }
   }
   window.addEventListener('popstate', function () { if (inPanel) showHub(true); });
@@ -328,7 +336,7 @@
     Store.where('voice_notes', 'task_id', id).then(function (rows) {
       var box = $('#vlist'); if (!box || !rows.length) return;
       box.innerHTML = '<h2>' + T('voice.h') + '</h2>';
-      rows.forEach(function (v) { var d = document.createElement('div'); d.className = 'cm'; var sm = document.createElement('small'); sm.textContent = nameOf(v.user_id) + ' · ' + I18N.ago(v.created_at) + ' · ' + fmt(v.secs || 0); var au = document.createElement('audio'); au.controls = true; au.preload = 'none'; au.src = v.audio; d.appendChild(sm); d.appendChild(au); box.appendChild(d); });
+      rows.forEach(function (v) { var d = document.createElement('div'); d.className = 'cm'; var sm = document.createElement('small'); sm.textContent = nameOf(v.user_id) + ' · ' + I18N.ago(v.created_at) + ' · ' + fmt(v.secs || 0); var au = document.createElement('audio'); au.controls = true; au.preload = 'none'; au.src = v.audio; d.appendChild(sm); d.appendChild(wave(v.id || v.created_at)); d.appendChild(au); box.appendChild(d); });
     }).catch(function () {});
     bindVoice('vb2', function (r) { act(async function () { await Store.insert('voice_notes', { task_id: id, audio: r.data, secs: r.secs }); await notify(others(), 'task_comment', 'tasks', t.title); }).then(function () { taskDetail(id); }); });
     var s = $('#fs'); if (s) s.onchange = function () { act(async function () { await Store.update('tasks', id, { status: s.value }); if (s.value === 'done') { window.__fx = 1; await notify([t.created_by], 'task_done', 'tasks', t.title); } }, 'saved').then(function () { taskDetail(id); }); };
@@ -449,6 +457,7 @@
     var items = ORDER.map(function (id) { return { id: id, label: function () { return T(id); }, sub: function () { return id === 'home' ? '' : id === 'me' ? T('profile') : T('dial.tap'); } }; });
     if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i) { cur = i; openPanel('open'); }, onTap: function () { openPanel('open'); } });
     else dial.set(0);
+    eyeState();
     if (Store.mode === 'live' && !enter.poll) enter.poll = setInterval(function () {
       if (!me || document.visibilityState !== 'visible') return;
       Store.list('notifications').then(function (rows) {
