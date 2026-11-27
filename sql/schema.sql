@@ -166,7 +166,7 @@ create policy "notif update" on public.notifications for update to authenticated
 -- decision log: who decided a leave or resignation, and when. Insert only. No update, no delete.
 create table if not exists public.decisions (
   id uuid primary key default gen_random_uuid(),
-  kind text not null check (kind in ('leave','resignation')), ref_id uuid not null,
+  kind text not null check (kind in ('leave','resignation','expense')), ref_id uuid not null,
   subject_user uuid references public.profiles(id) on delete set null,
   decided_by uuid not null default auth.uid() references public.profiles(id),
   decision text not null, note text, created_at timestamptz default now()
@@ -221,3 +221,33 @@ create table if not exists public.broadcasts (
 alter table public.broadcasts enable row level security;
 create policy "bc read" on public.broadcasts for select to authenticated using (public.is_member());
 create policy "bc insert" on public.broadcasts for insert to authenticated with check (public.is_manager() and from_user = auth.uid());
+
+
+-- Round 3: expenses and advances, asset library (links). Run after the rest of this file.
+alter table public.decisions drop constraint if exists decisions_kind_check;
+alter table public.decisions add constraint decisions_kind_check check (kind in ('leave','resignation','expense'));
+create table if not exists public.expenses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  kind text not null default 'expense' check (kind in ('expense','advance')),
+  amount numeric(12,2) not null check (amount > 0 and amount <= 1000000), note text,
+  status text not null default 'pending' check (status in ('pending','approved','rejected','settled','cancelled')),
+  decided_by uuid references public.profiles(id), decision_note text, created_at timestamptz default now()
+);
+alter table public.expenses enable row level security;
+create policy "expenses read" on public.expenses for select to authenticated using (public.is_member() and (user_id = auth.uid() or public.is_manager()));
+create policy "expenses insert" on public.expenses for insert to authenticated with check (public.is_member() and user_id = auth.uid() and status = 'pending');
+create policy "expenses update" on public.expenses for update to authenticated using (public.is_manager() or (user_id = auth.uid() and status = 'pending')) with check (public.is_manager() or (user_id = auth.uid() and status in ('pending','cancelled')));
+
+create table if not exists public.assets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  scope text not null check (scope in ('company','client')),
+  client_id uuid references public.clients(id) on delete cascade,
+  name text not null check (char_length(name) <= 120), url text not null check (url ~ '^https://'), note text,
+  created_at timestamptz default now()
+);
+alter table public.assets enable row level security;
+create policy "assets read" on public.assets for select to authenticated using (public.is_member() and (scope = 'client' or public.is_admin()));
+create policy "assets insert" on public.assets for insert to authenticated with check (public.is_member() and user_id = auth.uid() and (scope = 'client' or public.is_admin()));
+create policy "assets delete" on public.assets for delete to authenticated using (public.is_admin() or (user_id = auth.uid() and scope = 'client'));

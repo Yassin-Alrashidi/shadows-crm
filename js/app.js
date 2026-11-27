@@ -4,8 +4,8 @@
   var T = function (k) { return I18N.t(k); };
   var CFG = window.CRM_CONFIG || {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var ORDER = ['home', 'tasks', 'attend', 'leaves', 'clients', 'resign', 'me'];
-  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [] };
+  var ORDER = ['home', 'tasks', 'attend', 'leaves', 'clients', 'expenses', 'assets', 'resign', 'me'];
+  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [] };
   var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
@@ -77,7 +77,7 @@
   }
   var unread = function () { return D.notifications.filter(function (n) { return n.user_id === me.id && !n.read; }); };
   function bell() { var n = unread().length, b = $('#belln'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n; $('#burgerdot').hidden = !n; }
-  function notifText(n) { var sub = n.subject; if (n.kind === 'leave_req') sub = T('lt.' + n.subject); else if (n.kind === 'leave_decided' || n.kind === 'resign_decided') sub = T('d.' + n.subject); return esc(nameOf(n.actor)) + ' ' + T('n.' + n.kind) + (sub ? ': ' + esc(sub) : ''); }
+  function notifText(n) { var sub = n.subject; if (n.kind === 'leave_req') sub = T('lt.' + n.subject); else if (n.kind === 'leave_decided' || n.kind === 'resign_decided' || n.kind === 'expense_decided') sub = T('d.' + n.subject); return esc(nameOf(n.actor)) + ' ' + T('n.' + n.kind) + (sub ? ': ' + esc(sub) : ''); }
   function notifCenter() {
     var rows = D.notifications.filter(function (n) { return n.user_id === me.id; }).slice(0, 40);
     openSheet('<h2>' + T('bell') + '</h2>' + (rows.length ? rows.map(function (n) { return '<button class="item' + (n.read ? '' : ' unread') + '" data-nref="' + esc(n.ref || 'home') + '"><div class="t">' + notifText(n) + '</div><div class="m"><span>' + I18N.ago(n.created_at) + '</span></div></button>'; }).join('') + (unread().length ? '<button class="btn ghost" id="nread">' + T('n.markread') + '</button>' : '') : EMPTY()));
@@ -98,8 +98,8 @@
   function isLate(t) { return t.due_date && t.status !== 'done' && t.due_date < new Date().toISOString().slice(0, 10); }
   function isSoon(t) { var d = new Date().toISOString().slice(0, 10), tm = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return t.due_date && t.status !== 'done' && t.due_date >= d && t.due_date <= tm; }
   function logDecision(kind, row, st, note) {
-    return Store.insert('decisions', { kind: kind === 'leaves' ? 'leave' : 'resignation', ref_id: row.id, subject_user: row.user_id, decided_by: me.id, decision: st, note: note || '' })
-      .then(function () { return notify([row.user_id], kind === 'leaves' ? 'leave_decided' : 'resign_decided', kind === 'leaves' ? 'leaves' : 'resign', st); });
+    return Store.insert('decisions', { kind: kind === 'leaves' ? 'leave' : kind === 'expenses' ? 'expense' : 'resignation', ref_id: row.id, subject_user: row.user_id, decided_by: me.id, decision: st, note: note || '' })
+      .then(function () { return notify([row.user_id], kind === 'leaves' ? 'leave_decided' : kind === 'expenses' ? 'expense_decided' : 'resign_decided', kind === 'leaves' ? 'leaves' : kind === 'expenses' ? 'expenses' : 'resign', st); });
   }
   function hoursOf(rows) { return rows.reduce(function (s, r) { return s + ((r.check_out ? new Date(r.check_out) : new Date()) - new Date(r.check_in)) / 36e5; }, 0); }
   function profileSheet(uid) {
@@ -140,7 +140,7 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients'];
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets'];
     var res = await Promise.all(names.map(function (n) { return Store.list(n); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
@@ -148,14 +148,14 @@
 
   /* ---------- panels ---------- */
   var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><img src="assets/' + (['tasks', 'clients', 'me'].indexOf(ORDER[cur]) > -1 ? 'owl-head' : 'owl-wings') + '.webp" alt=""><div>' + T('none') + '</div><small>SILENT WORK.</small></div>'; };
-  var ENNAME = { home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
+  var ENNAME = { expenses: 'EXPENSES', assets: 'ASSETS', home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
   var V = {};
   V.home = function () {
     var myOpen = D.tasks.filter(function (t) { return (t.assigned_to === me.id || (t.team && t.created_by !== me.id && !acked(t, me.id))) && t.status !== 'done'; }).length;
     var pend = D.leaves.filter(function (l) { return l.status === 'pending' && (isMgr() || l.user_id === me.id); }).length;
     var act = D.clients.filter(function (c) { return c.status === 'active'; }).length;
     var allOpen = D.tasks.filter(function (t) { return t.status !== 'done'; }).length;
-    var need = isMgr() ? pend + D.resignations.filter(function (r) { return r.status === 'pending'; }).length : 0;
+    var need = isMgr() ? pend + D.expenses.filter(function (r) { return r.status === 'pending'; }).length + D.resignations.filter(function (r) { return r.status === 'pending'; }).length : 0;
     var used = D.leaves.filter(function (l) { return l.user_id === me.id && l.type === 'annual' && l.status !== 'rejected' && l.status !== 'cancelled'; }).reduce(function (a, l) { return a + (l.days || 0); }, 0);
     var tot = CFG.annualLeaveDays || 21, left = Math.max(0, tot - used);
     var h = '<h1>' + T('hi') + ' ' + esc((me.name || '').split(' ')[0]) + '</h1><p class="sub">' + T('hi.sub') + '</p>' + banners() + '<div class="grid">' +
@@ -235,7 +235,7 @@
   };
 
   /* ---------- render + transitions ---------- */
-  var inPanel = false, QUICK = { tasks: 1, leaves: 1, clients: 1, resign: 1 };
+  var inPanel = false, QUICK = { expenses: 1, assets: 1, tasks: 1, leaves: 1, clients: 1, resign: 1 };
   function render(dir) {
     if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
@@ -400,9 +400,64 @@
     $('#ed').onclick = function () { clientForm(c); };
   }
 
+
+  /* ---------- expenses and advances ---------- */
+  function money(n) { var v = Number(n || 0); var s = v.toLocaleString(I18N.lang === 'ar' ? 'ar-EG' : 'en-US'); return s + ' ' + T('e.cur'); }
+  V.expenses = function () {
+    var rows = mineOrAll(D.expenses), pend = rows.filter(function (r) { return r.status === 'pending'; }).length;
+    var tot = rows.filter(function (r) { return r.status === 'approved' || r.status === 'settled'; }).reduce(function (s, r) { return s + Number(r.amount || 0); }, 0);
+    var h = '<h1>' + T('expenses') + '</h1><p class="sub">' + T('e.intro') + '</p>' + scopeBar();
+    h += '<div class="two3"><div class="kpi red"><b>' + pend + '</b><span>' + T('ls.pending') + '</span></div><div class="kpi"><b>' + money(tot) + '</b><span>' + T('ls.approved') + '</span></div></div>';
+    h += '<button class="btn" data-new="expense" style="margin:4px 0 14px">' + T('new.expense') + '</button>';
+    h += rows.length ? rows.map(function (r) { return '<button class="item" data-expense="' + r.id + '"><div class="t">' + money(r.amount) + ' · ' + T('e.' + r.kind) + '</div><div class="m">' + pill(r.status, T('ls.' + r.status)) + '<span>' + esc(nameOf(r.user_id)) + '</span><span>' + I18N.ago(r.created_at) + '</span></div></button>'; }).join('') : EMPTY();
+    return h;
+  };
+  function newExpense() {
+    openSheet('<h2>' + T('new.expense') + '</h2><label class="fld"><span>' + T('e.kind') + '</span><select id="fk">' + options(['expense', 'advance'], 'e.', 'expense') + '</select></label><label class="fld"><span>' + T('e.amount') + '</span><input id="fm" type="number" inputmode="decimal" min="1" step="any" dir="ltr"></label><label class="fld"><span>' + T('e.note') + '</span><textarea id="fr"></textarea></label><p class="err" id="ferr"></p><button class="btn big" id="ok">' + T('send') + '</button>');
+    $('#ok').onclick = async function () {
+      var amt = parseFloat(f('#fm')); if (!(amt > 0) || amt > 1000000) { $('#ferr').textContent = T('e.badamt'); return; }
+      var k = f('#fk'), note = f('#fr');
+      var ok = await act(async function () { await Store.insert('expenses', { kind: k, amount: amt, note: note, status: 'pending' }); await notify(admins(), 'expense_req', 'expenses', ''); }, 'sent'); if (ok) { closeSheet(); goto(ORDER.indexOf('expenses')); }
+    };
+  }
+  function expenseDetail(id) {
+    var r = D.expenses.filter(function (x) { return x.id === id; })[0]; if (!r) return;
+    openSheet('<h2>' + money(r.amount) + ' · ' + T('e.' + r.kind) + '</h2><div style="margin-bottom:8px">' + pill(r.status, T('ls.' + r.status)) + '</div><p style="color:var(--ash)">' + esc(nameOf(r.user_id)) + '</p><p>' + esc(r.note) + '</p>' + (r.decision_note ? '<p class="cm">' + esc(r.decision_note) + '</p>' : '') + decideButtons('expenses', id, r, 'approve', 'reject') + (isMgr() && r.status === 'approved' ? '<div class="acts"><button class="btn" id="dset">' + T('e.settle') + '</button></div>' : ''));
+    wireDecide('expenses', id, 'approved', 'rejected', 'cancelled');
+    if ($('#dset')) $('#dset').onclick = function () { act(async function () { await Store.update('expenses', id, { status: 'settled' }); await logDecision('expenses', r, 'settled', ''); }, 'saved').then(closeSheet); };
+  }
+
+  /* ---------- asset library (links; company assets are admin only) ---------- */
+  function isAdm() { return me && me.role === 'admin'; }
+  V.assets = function () {
+    var rows = D.assets.filter(function (x) { return x.scope === 'client' || isAdm(); });
+    var h = '<h1>' + T('assets') + '</h1><p class="sub">' + T('a.intro') + '</p><button class="btn" data-new="asset" style="margin-bottom:14px">' + T('new.asset') + '</button>';
+    ['company', 'client'].forEach(function (sc) {
+      var list = rows.filter(function (x) { return x.scope === sc; }); if (!list.length) return;
+      h += '<h2 style="margin:18px 0 8px;font-size:15px;color:var(--mut)">' + T('a.' + sc) + '</h2>';
+      h += list.map(function (x) { var c = D.clients.filter(function (k) { return k.id === x.client_id; })[0]; return '<button class="item" data-asset="' + x.id + '"><div class="t">' + esc(x.name) + '</div><div class="m">' + (c ? '<span>' + esc(c.name) + '</span>' : '') + '<span>' + I18N.ago(x.created_at) + '</span></div></button>'; }).join('');
+    });
+    return rows.length ? h : h + EMPTY();
+  };
+  function newAsset() {
+    var scopes = isAdm() ? ['client', 'company'] : ['client'];
+    openSheet('<h2>' + T('new.asset') + '</h2><label class="fld"><span>' + T('a.scope') + '</span><select id="fs">' + options(scopes, 'a.', 'client') + '</select></label><label class="fld"><span>' + T('a.client.pick') + '</span><select id="fc">' + D.clients.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('') + '</select></label><label class="fld"><span>' + T('a.name') + '</span><input id="fnm"></label><label class="fld"><span>' + T('a.url') + '</span><input id="fu" type="url" dir="ltr" placeholder="https://"></label><label class="fld"><span>' + T('e.note') + '</span><textarea id="fr"></textarea></label><p class="err" id="ferr"></p><button class="btn big" id="ok">' + T('save') + '</button>');
+    $('#ok').onclick = async function () {
+      var nm = f('#fnm'), u = f('#fu'), sc = f('#fs'); if (!nm || !/^https:\/\/\S+$/i.test(u)) { $('#ferr').textContent = T('a.badurl'); return; }
+      if (sc === 'company' && !isAdm()) return;
+      var ok = await act(function () { return Store.insert('assets', { scope: sc, client_id: sc === 'client' ? (f('#fc') || null) : null, name: nm, url: u, note: f('#fr') }); }, 'saved'); if (ok) { closeSheet(); goto(ORDER.indexOf('assets')); }
+    };
+  }
+  function assetDetail(id) {
+    var x = D.assets.filter(function (r) { return r.id === id; })[0]; if (!x || (x.scope === 'company' && !isAdm())) return;
+    var safe = /^https:\/\//i.test(x.url) ? x.url : '#';
+    openSheet('<h2>' + esc(x.name) + '</h2><p style="color:var(--ash)">' + T('a.' + x.scope) + ' · ' + esc(nameOf(x.user_id)) + '</p><p>' + esc(x.note) + '</p><a class="btn big" href="' + esc(safe) + '" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none">' + T('a.open') + '</a>' + (isAdm() || x.user_id === me.id ? '<div class="acts"><button class="btn danger" id="adel">' + T('delete') + '</button></div>' : ''));
+    if ($('#adel')) $('#adel').onclick = function () { act(function () { return Store.remove('assets', id); }, 'saved').then(closeSheet); };
+  }
+
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar]'); if (!t) return;
+    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-expense],[data-asset],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar]'); if (!t) return;
     var d = t.dataset;
     if (d.scope) { scope = d.scope; render(0); }
     else if (d.f) { var p = d.f.split(':'); filters[p[0]] = p[1]; render(0); }
@@ -411,7 +466,11 @@
     else if (d.leave) leaveDetail(d.leave);
     else if (d.client) clientDetail(d.client);
     else if (d.resign) resignDetail(d.resign);
+    else if (d.expense) expenseDetail(d.expense);
+    else if (d.asset) assetDetail(d.asset);
     else if (d.new === 'resign') newResign();
+    else if (d.new === 'expense') newExpense();
+    else if (d.new === 'asset') newAsset();
     else if (d.prof) profileSheet(d.prof);
     else if (d.pickstar) pickStar(d.pickstar);
     else if (d.act === 'bcast') bcastSheet();
@@ -426,7 +485,7 @@
   $('#stage').addEventListener('click', function (e) { var ab = e.target.closest('#attbtn'); if (ab) return toggleAttend(); var b = e.target.closest('#mlang'), o = e.target.closest('#mout'); if (b) toggleLang(); if (o) logout(); });
 
   function toggleAttend() { var open = D.attendance.filter(function (r) { return r.user_id === me.id && !r.check_out; })[0]; act(function () { return open ? Store.update('attendance', open.id, { check_out: new Date().toISOString() }) : Store.insert('attendance', {}); }, open ? 'att.bye' : 'att.hi'); }
-  function quickAdd() { var id = ORDER[cur]; if (id === 'tasks') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); }
+  function quickAdd() { var id = ORDER[cur]; if (id === 'tasks') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); else if (id === 'expenses') newExpense(); else if (id === 'assets') newAsset(); }
   function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); buildMenu(); if (dial) dial.set(cur); } }
   function chrome() { applyText(); if (window.__theme) window.__theme(document.documentElement.getAttribute('data-theme') || 'light'); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
   function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crm.theme', t); } catch (e) {} var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t === 'dark' ? '#0E0E10' : '#FFFFFF'); var b = $('#apptheme'); if (b) b.textContent = t === 'dark' ? (I18N.lang === 'ar' ? 'الوضع الفاتح' : 'Light mode') : (I18N.lang === 'ar' ? 'الوضع الليلي' : 'Dark mode'); }

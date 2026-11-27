@@ -6,7 +6,7 @@
   var CFG = window.CRM_CONFIG || {};
   var live = !!(CFG.supabaseUrl && CFG.supabaseKey);
   var LS = window.localStorage;
-  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts'];
+  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'expenses', 'assets'];
   var me = null; // current profile {id,email,name,role}
 
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(16).slice(2)); }
@@ -76,6 +76,15 @@
         { id: uid(), user_id: a.id, check_in: ago(1.4), check_out: ago(1.08), created_at: ago(1.4) }
       ]);
       var tk = demo.t('tasks'); tk.push({ id: uid(), created_by: boss.id, assigned_to: null, team: true, title: SL('Everyone: prepare for tomorrow\'s presentation', 'الكل: جهّزوا لعرض بكرة'), description: SL('Read the deck and note two questions each.', 'اقرأوا العرض وسجّلوا سؤالين لكل واحد.'), priority: 'high', status: 'todo', due_date: d(1), created_at: ago(0.2), updated_at: ago(0.2) }); demo.saveT('tasks', tk);
+      demo.saveT('expenses', [
+        { id: uid(), user_id: a.id, kind: 'expense', amount: 350, note: SL('Props for the bakery shoot', 'إكسسوارات تصوير المخبز'), status: 'pending', created_at: ago(0.5) },
+        { id: uid(), user_id: b.id, kind: 'advance', amount: 2000, note: SL('Advance on this month', 'سلفة على الشهر ده'), status: 'approved', created_at: ago(4) }
+      ]);
+      var cl = demo.t('clients');
+      demo.saveT('assets', [
+        { id: uid(), user_id: boss.id, scope: 'company', client_id: null, name: SL('Brand kit', 'هوية الشركة'), url: 'https://example.com/brand-kit', note: SL('Logos and colours', 'اللوجوهات والألوان'), created_at: ago(30) },
+        { id: uid(), user_id: boss.id, scope: 'client', client_id: cl[0] && cl[0].id, name: SL('Nour Bakery photos', 'صور مخبز نور'), url: 'https://example.com/nour', note: '', created_at: ago(10) }
+      ]);
       demo.saveT('resignations', []); demo.saveT('task_comments', []);
       jset('crm.session', boss.id); me = pub(boss); return me;
     }
