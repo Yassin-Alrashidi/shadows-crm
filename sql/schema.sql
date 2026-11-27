@@ -11,6 +11,7 @@ create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   created_by uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   assigned_to uuid references public.profiles(id) on delete set null,
+  team boolean not null default false,
   title text not null, description text, priority text default 'normal',
   status text not null default 'todo', due_date date,
   created_at timestamptz default now(), updated_at timestamptz default now()
@@ -90,12 +91,12 @@ create policy "clients update" on public.clients for update to authenticated usi
 create policy "clients delete" on public.clients for delete to authenticated using (public.is_manager());
 
 -- tasks: admins/managers assign; the assignee and creator see and update; managers see all
-create policy "tasks read" on public.tasks for select to authenticated using (created_by = auth.uid() or assigned_to = auth.uid() or public.is_manager());
-create policy "tasks insert" on public.tasks for insert to authenticated with check (created_by = auth.uid() and (assigned_to = auth.uid() or assigned_to is null or public.is_manager()));
+create policy "tasks read" on public.tasks for select to authenticated using (team or created_by = auth.uid() or assigned_to = auth.uid() or public.is_manager());
+create policy "tasks insert" on public.tasks for insert to authenticated with check (created_by = auth.uid() and (assigned_to = auth.uid() or assigned_to is null or public.is_manager()) and (not team or public.is_manager()));
 create policy "tasks update" on public.tasks for update to authenticated using (created_by = auth.uid() or assigned_to = auth.uid() or public.is_manager());
 create policy "tasks delete" on public.tasks for delete to authenticated using (public.is_manager());
-create policy "task comments read" on public.task_comments for select to authenticated using (exists (select 1 from public.tasks t where t.id = task_id and (t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
-create policy "task comments insert" on public.task_comments for insert to authenticated with check (user_id = auth.uid() and exists (select 1 from public.tasks t where t.id = task_id and (t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
+create policy "task comments read" on public.task_comments for select to authenticated using (exists (select 1 from public.tasks t where t.id = task_id and (t.team or t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
+create policy "task comments insert" on public.task_comments for insert to authenticated with check (user_id = auth.uid() and exists (select 1 from public.tasks t where t.id = task_id and (t.team or t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
 
 -- attendance: check in / check out. Times come from the database clock.
 create table if not exists public.attendance (
@@ -122,3 +123,75 @@ create policy "attendance update" on public.attendance for update to authenticat
 
 -- THE TWO ADMINS: run this once with the real company emails, before they create their accounts:
 -- insert into public.admin_emails (email) values ('admin1@company.example'), ('admin2@company.example');
+
+-- notifications: in-app notification center (real push comes later). Each person reads only their own.
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  kind text not null, ref text, subject text,
+  actor uuid references public.profiles(id) on delete set null,
+  read boolean not null default false, created_at timestamptz default now()
+);
+alter table public.notifications enable row level security;
+create policy "notif read" on public.notifications for select to authenticated using (user_id = auth.uid());
+create policy "notif insert" on public.notifications for insert to authenticated with check (actor = auth.uid());
+create policy "notif update" on public.notifications for update to authenticated using (user_id = auth.uid());
+
+-- decision log: who decided a leave or resignation, and when. Insert only. No update, no delete.
+create table if not exists public.decisions (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('leave','resignation')), ref_id uuid not null,
+  subject_user uuid references public.profiles(id) on delete set null,
+  decided_by uuid not null default auth.uid() references public.profiles(id),
+  decision text not null, note text, created_at timestamptz default now()
+);
+alter table public.decisions enable row level security;
+create policy "decisions read" on public.decisions for select to authenticated using (public.is_manager() or subject_user = auth.uid());
+create policy "decisions insert" on public.decisions for insert to authenticated with check (public.is_manager() and decided_by = auth.uid());
+
+-- if the tasks table already exists from an earlier run, this adds the team column
+alter table public.tasks add column if not exists team boolean not null default false;
+
+-- voice notes on tasks (kept small: the app limits a note to 45 seconds)
+create table if not exists public.voice_notes (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid not null references public.tasks(id) on delete cascade,
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  audio text not null, secs int, created_at timestamptz default now()
+);
+alter table public.voice_notes enable row level security;
+create policy "voice read" on public.voice_notes for select to authenticated using (exists (select 1 from public.tasks t where t.id = task_id and (t.team or t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
+create policy "voice insert" on public.voice_notes for insert to authenticated with check (user_id = auth.uid() and exists (select 1 from public.tasks t where t.id = task_id and (t.team or t.created_by = auth.uid() or t.assigned_to = auth.uid() or public.is_manager())));
+
+-- team tasks: each member marks their own side done
+create table if not exists public.task_ack (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid not null references public.tasks(id) on delete cascade,
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  created_at timestamptz default now(), unique (task_id, user_id)
+);
+alter table public.task_ack enable row level security;
+create policy "ack read" on public.task_ack for select to authenticated using (true);
+create policy "ack insert" on public.task_ack for insert to authenticated with check (user_id = auth.uid());
+
+-- star of the week: one per week, picked by an admin
+create table if not exists public.stars (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  week_start date not null unique, picked_by uuid default auth.uid() references public.profiles(id),
+  created_at timestamptz default now()
+);
+alter table public.stars enable row level security;
+create policy "stars read" on public.stars for select to authenticated using (true);
+create policy "stars insert" on public.stars for insert to authenticated with check (public.is_manager());
+create policy "stars delete" on public.stars for delete to authenticated using (public.is_manager());
+
+-- broadcasts: one message from an admin to the whole team
+create table if not exists public.broadcasts (
+  id uuid primary key default gen_random_uuid(),
+  from_user uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  body text not null, urgent boolean not null default false, created_at timestamptz default now()
+);
+alter table public.broadcasts enable row level security;
+create policy "bc read" on public.broadcasts for select to authenticated using (true);
+create policy "bc insert" on public.broadcasts for insert to authenticated with check (public.is_manager() and from_user = auth.uid());

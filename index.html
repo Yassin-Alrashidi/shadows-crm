@@ -14,18 +14,18 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Cairo:wght@400;600;800&family=Chakra+Petch:wght@500;600&display=swap" rel="stylesheet">
 <style>html,body{margin:0;background:#08080A;color:#F7F5F5}#boot{position:fixed;inset:0;background:#08080A;display:grid;place-items:center;z-index:99}</style>
-<link rel="stylesheet" href="css/app.css?v=5">
+<link rel="stylesheet" href="css/app.css?v=7">
 </head>
 <body>
-<div id="boot"><div class="bootin"><img src="assets/owl-head.webp" alt="" width="120" height="120"><div class="bootw">SHADOWS</div></div></div>
+<div id="boot"><div class="bootin"><img class="wings" src="assets/owl-wings.webp" alt="" width="320" height="180"><img src="assets/wordmark.webp" alt="Shadows" height="30" style="display:block;margin:6px auto 0"><div class="bootw">WE MOVE IN SILENCE.</div></div></div>
 
 <main id="auth" hidden>
   <div class="authcard">
-    <img class="authowl" src="assets/owl-head.webp" alt="" width="96" height="96">
+    <img class="authwings" src="assets/owl-wings.webp" alt="" width="320" height="180">
     <img class="authword" src="assets/wordmark.webp" alt="Shadows" height="26">
-    <p class="authtag" data-t="tag"></p>
+    <p class="authtag">WE MOVE IN SILENCE.</p>
     <div class="seg" id="authseg"><button data-m="in" class="on" data-t="auth.in"></button><button data-m="up" data-t="auth.up"></button></div>
     <form id="authform" novalidate>
       <label class="fld" id="fname" hidden><span data-t="auth.name"></span><input name="name" autocomplete="name"></label>
@@ -36,14 +36,14 @@
       <button class="btn big" id="authgo" type="submit"></button>
       <button class="btn ghost" id="demobtn" type="button" hidden data-t="auth.demo"></button>
     </form>
-    <button class="lang" id="authlang" type="button"></button>
+    <button class="lang" id="authlang" type="button"></button><div class="foot">SHADOWS | MEDIA &amp; ADVERTISING</div>
   </div>
 </main>
 
 <div id="app" hidden>
   <header class="top">
     <div class="topl"><img src="assets/owl-head.webp" alt="" width="30" height="30"><span id="title"></span></div>
-    <button class="lang" id="applang" type="button"></button>
+    <div class="topr"><button class="bell" id="bell" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><i id="belln" hidden></i></button><button class="lang" id="applang" type="button"></button></div>
   </header>
   <div id="demobar" class="demobar" hidden></div>
   <section id="stage" aria-live="polite"></section>
@@ -56,10 +56,10 @@
 <div id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetin"></div></div>
 <div id="toast" role="status"></div>
 
-<script src="js/config.js?v=5"></script>
-<script src="js/i18n.js?v=5"></script>
-<script src="js/store.js?v=5"></script>
-<script src="js/dial.js?v=5"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/config.js?v=7"></script>
+<script src="js/i18n.js?v=7"></script>
+<script src="js/store.js?v=7"></script>
+<script src="js/dial.js?v=7"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   var CFG = window.CRM_CONFIG || {};
   var live = !!(CFG.supabaseUrl && CFG.supabaseKey);
   var LS = window.localStorage;
-  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance'];
+  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts'];
   var me = null; // current profile {id,email,name,role}
 
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(16).slice(2)); }
@@ -34,7 +34,8 @@
     session: function () { var id = jget('crm.session', null); var u = demo.users().filter(function (x) { return x.id === id; })[0]; me = u ? pub(u) : null; return me; },
     profiles: function () { return demo.users().map(pub); },
     seed: function () {
-      var users = demo.users();
+      var users = demo.users(), ex = users.filter(function (u) { return u.email === 'demo@shadows.local'; })[0];
+      if (ex) { jset('crm.session', ex.id); me = pub(ex); return me; }
       var boss = { id: uid(), email: 'demo@shadows.local', pw: 'demo', name: 'Yassin (demo)', role: 'admin', created_at: now() };
       var a = { id: uid(), email: 'sara@shadows.local', pw: 'demo', name: 'Sara', role: 'employee', created_at: now() };
       var b = { id: uid(), email: 'omar@shadows.local', pw: 'demo', name: 'Omar', role: 'employee', created_at: now() };
@@ -42,9 +43,23 @@
       var d = function (n) { return new Date(Date.now() + n * 864e5).toISOString().slice(0, 10); };
       var ago = function (n) { return new Date(Date.now() - n * 864e5).toISOString(); };
       demo.saveT('tasks', [
-        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Shoot the Nour Bakery reel', description: 'Friday morning. Bring the grips.', priority: 'high', status: 'in_progress', due_date: d(2), created_at: ago(1), updated_at: ago(1) },
-        { id: uid(), created_by: boss.id, assigned_to: b.id, title: 'Edit the Atlas Fitness teaser', description: 'Cut to 20 seconds, vertical.', priority: 'urgent', status: 'todo', due_date: d(1), created_at: ago(2), updated_at: ago(2) },
+        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Shoot the Nour Bakery reel', description: 'Friday morning. Bring the grips.', priority: 'high', status: 'in_progress', due_date: d(1), created_at: ago(1), updated_at: ago(1) },
+        { id: uid(), created_by: boss.id, assigned_to: b.id, title: 'Edit the Atlas Fitness teaser', description: 'Cut to 20 seconds, vertical.', priority: 'urgent', status: 'todo', due_date: d(-1), created_at: ago(2), updated_at: ago(2) },
         { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Send the weekly report', description: '', priority: 'normal', status: 'done', due_date: d(-1), created_at: ago(6), updated_at: ago(4) }
+      ]);
+      demo.saveT('broadcasts', [
+        { id: uid(), from_user: boss.id, body: 'Client meeting moved to 4 PM today. Everyone in the studio by 3:30.', urgent: true, created_at: ago(0.1) }
+      ]);
+      demo.saveT('stars', [
+        { id: uid(), user_id: a.id, week_start: (function () { var x = new Date(); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() - 6 + 7) % 7)); return x.toISOString().slice(0, 10); })(), picked_by: boss.id, created_at: ago(1) }
+      ]);
+      demo.saveT('task_ack', []); demo.saveT('voice_notes', []);
+      demo.saveT('notifications', [
+        { id: uid(), user_id: boss.id, kind: 'leave_req', ref: 'leaves', subject: 'annual', actor: a.id, read: false, created_at: ago(0.05) },
+        { id: uid(), user_id: boss.id, kind: 'task_done', ref: 'tasks', subject: 'Send the weekly report', actor: a.id, read: false, created_at: ago(0.3) }
+      ]);
+      demo.saveT('decisions', [
+        { id: uid(), kind: 'leave', ref_id: uid(), subject_user: b.id, decided_by: boss.id, decision: 'approved', note: '', created_at: ago(5) }
       ]);
       demo.saveT('leaves', [
         { id: uid(), user_id: a.id, type: 'annual', start_date: d(9), end_date: d(12), days: 4, reason: 'Family trip', status: 'pending', created_at: ago(1) },
@@ -59,6 +74,7 @@
         { id: uid(), user_id: b.id, check_in: ago(1.4), check_out: ago(1.05), created_at: ago(1.4) },
         { id: uid(), user_id: a.id, check_in: ago(1.4), check_out: ago(1.08), created_at: ago(1.4) }
       ]);
+      var tk = demo.t('tasks'); tk.push({ id: uid(), created_by: boss.id, assigned_to: null, team: true, title: 'Everyone: prepare for tomorrow\'s presentation', description: 'Read the deck and note two questions each.', priority: 'high', status: 'todo', due_date: d(1), created_at: ago(0.2), updated_at: ago(0.2) }); demo.saveT('tasks', tk);
       demo.saveT('resignations', []); demo.saveT('task_comments', []);
       jset('crm.session', boss.id); me = pub(boss); return me;
     }
@@ -127,7 +143,7 @@
     },
     insert: async function (t, row) {
       row = Object.assign({}, row);
-      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else row.user_id = me.id;
+      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else if (['notifications', 'decisions', 'stars', 'broadcasts'].indexOf(t) < 0) row.user_id = me.id;
       if (live) return remote.insert(t, row);
       row.id = uid(); row.created_at = now(); if (t === 'tasks') row.updated_at = row.created_at; if (t === 'attendance') { row.check_in = row.created_at; row.check_out = null; }
       var rows = demo.t(t); rows.push(row); demo.saveT(t, rows); return row;
@@ -136,6 +152,10 @@
       patch = Object.assign({}, patch); if (t === 'tasks') patch.updated_at = now();
       if (live) return remote.update(t, id, patch);
       var rows = demo.t(t), r = rows.filter(function (x) { return x.id === id; })[0]; if (r) Object.assign(r, patch); demo.saveT(t, rows); return r;
+    },
+    where: async function (t, col, val) {
+      if (live) return api('/rest/v1/' + t + '?select=*&' + col + '=eq.' + encodeURIComponent(val) + '&order=created_at.asc', {});
+      return demo.t(t).filter(function (r) { return r[col] === val; });
     },
     remove: async function (t, id) { if (live) return remote.remove(t, id); demo.saveT(t, demo.t(t).filter(function (x) { return x.id !== id; })); },
     setRole: async function (id, role) {
