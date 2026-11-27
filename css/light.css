@@ -97,3 +97,9 @@ html body #dial.open{pointer-events:auto!important}
 #dial #eIris{transform-box:fill-box;transform-origin:center}
 .dialwrap:after{height:110px}
 #dial:not(.open) .eyebtn{background:var(--bg);border:1px solid var(--ln);border-radius:30px;padding:8px 14px;box-sizing:border-box}
+
+/* v31 real owl eye asset */
+#dial .eyebtn,#dial:not(.open) .eyebtn{width:68px!important;height:68px!important;margin-left:-34px!important;bottom:calc(var(--sab) + 14px)!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;overflow:hidden}
+#dial .eyebtn img{width:100%;height:100%;display:block;border-radius:50%;pointer-events:none;will-change:transform}
+#dial:not(.open) .eyebtn{box-shadow:0 0 0 1px var(--ln)}
+#dial.open .eyebtn{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
