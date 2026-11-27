@@ -257,3 +257,24 @@ html[lang=ar] .menuitem .mi{font-family:Cairo;font-stretch:100%;text-transform:n
 .panel h1{padding-inline-end:70px}
 body.dialing .dialhint{opacity:0}
 .pcard,.wc{border-radius:0}.pcard{border-color:var(--ember);background:rgba(5,4,5,.88)}
+/* v12 */
+#hubbg{background:radial-gradient(60% 40% at 50% 46%,rgba(225,24,39,.35),transparent 72%),var(--ink)}
+#hubbg img{width:max(215vw,172vh);top:44%;opacity:1;mix-blend-mode:normal;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 58%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 58%,transparent 100%);filter:saturate(1.1) contrast(1.05) brightness(1.05)}
+#hubbg:after{background:radial-gradient(70% 55% at 50% 46%,transparent 55%,rgba(5,4,5,.85) 110%)}
+/* Arabic gets its own faces: Reem Kufi display + Cairo body; Latin keeps Archivo wide */
+html[lang=ar] .panel h1,html[lang=ar] #dialcap,html[lang=ar] .menuitem .mi,html[lang=ar] .item .t,html[lang=ar] .kpi b,html[lang=ar] .eyebrow{font-family:'Reem Kufi','Cairo',sans-serif;font-stretch:100%;text-transform:none}
+html[lang=ar] .panel h1{font-weight:700;letter-spacing:0;line-height:1.2;font-size:clamp(38px,11.5vw,54px);padding-inline-end:0;max-width:70%}
+html[lang=ar] .item .t{font-weight:600;font-size:20px}
+html[lang=ar] .eyebrow{font-size:15px;letter-spacing:.04em;direction:rtl;font-weight:600}
+html[lang=ar] .eyebrow span{direction:rtl}
+html[lang=ar] .panel .sub,html[lang=ar] .m,html[lang=ar] .menuitem .mn{font-family:'Cairo'}
+html[lang=ar] .menuitem .mi{font-weight:600;font-size:22px}
+html[lang=ar] #dialcap{font-size:34px;font-weight:600}
+.panel::before{font-size:150px;opacity:.8}
+html[dir=rtl] .panel::before{inset-inline-end:auto;left:12px;right:auto}
+html[dir=ltr] .panel::before{inset-inline-end:auto;right:12px;left:auto}
+.panel h1{max-width:75%}
+#hubbg img{width:max(150vw,120vh);top:35%}
+@media (min-width:700px){#hubbg img{width:max(110vw,150vh)}}
+#hubbg img{width:165vw;top:25%}
+@media (min-width:700px){#hubbg img{width:max(75vw,125vh);top:34%}}

@@ -27,17 +27,17 @@
       'f.assignee': 'اديها لـ', 'f.due': 'الموعد', 'to': 'إلى', 'from.admin': 'من',
       'pr.low': 'عادية', 'pr.normal': 'متوسطة', 'pr.high': 'عالية', 'pr.urgent': 'مستعجلة',
       'cat.it': 'تقنية', 'cat.hr': 'موارد بشرية', 'cat.finance': 'حسابات', 'cat.workspace': 'مكان الشغل', 'cat.other': 'حاجة تانية',
-      'lt.annual': 'سنوية', 'lt.sick': 'مرضية', 'lt.unpaid': 'بدون مرتب', 'lt.emergency': 'عارضة',
-      'ls.pending': 'منتظرة', 'ls.approved': 'موافق عليها', 'ls.rejected': 'مرفوضة', 'ls.cancelled': 'ملغية',
+      'lt.annual': 'إجازة سنوية', 'lt.sick': 'إجازة مرضية', 'lt.unpaid': 'إجازة بدون مرتب', 'lt.emergency': 'إجازة عارضة',
+      'ls.pending': 'قيد الانتظار', 'ls.approved': 'تمت الموافقة', 'ls.rejected': 'مرفوضة', 'ls.cancelled': 'ملغية',
       'rs.pending': 'منتظرة', 'rs.accepted': 'اتقبلت', 'rs.rejected': 'اترفضت', 'rs.withdrawn': 'اتسحبت',
       'cs.lead': 'محتمل', 'cs.active': 'شغّال', 'cs.paused': 'واقف', 'cs.closed': 'اتقفل',
       'approve': 'وافق', 'reject': 'ارفض', 'accept': 'اقبل', 'withdraw': 'اسحب الطلب', 'cancelreq': 'ألغي الطلب', 'note': 'ملاحظة القرار (اختياري)',
       'resign.warn': 'الطلب ده بيوصل للإدارة بس. تقدر تسحبه طول ما هو منتظر.', 'resign.confirm': 'متأكد إنك عايز تقدّم استقالة؟', 'resign.yes': 'أيوه، قدّم الطلب',
       'resign.intro': 'هنا تقدر تقدّم استقالتك بشكل رسمي ومحترم.', 'resign.last': 'آخر يوم', 'from.whom': 'صاحب الطلب',
-      'dayn': 'أيام', 'profile': 'الملف الشخصي', 'lang': 'English', 'logout': 'خروج', 'role': 'الدور', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Team',
+      'dayn': 'يوم', 'profile': 'الملف الشخصي', 'lang': 'English', 'logout': 'خروج', 'role': 'الدور', 'role.admin': 'Admin', 'role.manager': 'Manager', 'role.employee': 'Team',
       'team.h': 'الـ Team', 'install': 'ضيف التطبيق على شاشتك: من المتصفح اختار "إضافة إلى الشاشة الرئيسية".',
       'dial.hint': 'لفّ العدسة مع عقارب الساعة أو عكسها وسيبها', 'dial.tap': 'اضغط للإضافة', 'overlap': 'التواريخ دي متداخلة مع إجازة تانية ليك.', 'baddates': 'تاريخ النهاية لازم يكون بعد البداية.',
-      'balance.of': 'من', 'used': 'اتاخد', 'offline': 'مفيش إنترنت'
+      'balance.of': 'متبقي من', 'used': 'تم استخدامها', 'offline': 'مفيش إنترنت'
     },
     en: {
       app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'One moment…',
