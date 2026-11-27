@@ -6,7 +6,7 @@
   var CFG = window.CRM_CONFIG || {};
   var live = !!(CFG.supabaseUrl && CFG.supabaseKey);
   var LS = window.localStorage;
-  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'expenses', 'assets'];
+  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'expenses', 'assets', 'client_members'];
   var me = null; // current profile {id,email,name,role}
 
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(16).slice(2)); }
@@ -35,6 +35,7 @@
     session: function () { var id = jget('crm.session', null); var u = demo.users().filter(function (x) { return x.id === id; })[0]; me = u ? pub(u) : null; return me; },
     profiles: function () { return demo.users().map(pub); },
     seed: function () {
+      if (jget('crm.seedv', 0) < 3) { Object.keys(LS).filter(function (k) { return k.indexOf('crm.') === 0 && k !== 'crm.lang' && k !== 'crm.theme'; }).forEach(function (k) { LS.removeItem(k); }); jset('crm.seedv', 3); }
       var users = demo.users(), ex = users.filter(function (u) { return u.email === 'demo@shadows.local'; })[0];
       if (ex) { jset('crm.session', ex.id); me = pub(ex); return me; }
       var boss = { id: uid(), email: 'demo@shadows.local', pw: 'demo', name: SL('Yassin (demo)', 'ياسين (تجريبي)'), role: 'admin', created_at: now() };
@@ -86,10 +87,36 @@
         { id: uid(), user_id: boss.id, scope: 'client', client_id: cl[0] && cl[0].id, name: SL('Nour Bakery photos', 'صور مخبز نور'), url: 'https://example.com/nour', note: '', created_at: ago(10) }
       ]);
       demo.saveT('resignations', []); demo.saveT('task_comments', []);
+      /* richer demo data: more people in teams, clients with members, client-linked tasks, leaves for the calendar */
+      (function () {
+        var us = demo.users(), nm = function (en, ar, em, team) { var u = { id: uid(), email: em, pw: 'demo', name: SL(en, ar), role: 'employee', team: team, created_at: now() }; us.push(u); return u; };
+        us.forEach(function (u) { if (u.email === 'sara@shadows.local') u.team = 'production'; if (u.email === 'omar@shadows.local') u.team = 'editing'; });
+        var nada = nm('Nada', 'ندى', 'nada@shadows.local', 'design'), karim = nm('Karim', 'كريم', 'karim@shadows.local', 'editing'), hana = nm('Hana', 'هنا', 'hana@shadows.local', 'social');
+        demo.saveUsers(us);
+        var sara = us.filter(function (u) { return u.email === 'sara@shadows.local'; })[0], omar = us.filter(function (u) { return u.email === 'omar@shadows.local'; })[0];
+        var cs = demo.t('clients');
+        var zahra = { id: uid(), created_by: boss.id, name: SL('Zahra Dental', 'عيادات زهرة'), contact: SL('Dr. Zahra', 'د. زهرة'), phone: '+201000000003', email: '', status: 'active', notes: SL('Weekly social posts and a Ramadan campaign.', 'بوستات أسبوعية وحملة رمضان.'), created_at: ago(20) };
+        var pixel = { id: uid(), created_by: boss.id, name: SL('Pixel Studio', 'بيكسل ستوديو'), contact: SL('Tamer', 'تامر'), phone: '+201000000004', email: '', status: 'paused', notes: SL('Paused until next quarter.', 'موقوف لحد الربع الجاي.'), created_at: ago(40) };
+        cs.push(zahra, pixel); demo.saveT('clients', cs);
+        var nour = cs.filter(function (c) { return c.name === SL('Nour Bakery', 'مخبز نور'); })[0], atlas = cs.filter(function (c) { return c.name === SL('Atlas Fitness', 'أطلس فيتنس'); })[0];
+        var cm = function (c, u) { return { id: uid(), client_id: c.id, user_id: u.id, created_at: ago(5) }; };
+        demo.saveT('client_members', [cm(nour, sara), cm(nour, hana), cm(nour, nada), cm(atlas, omar), cm(atlas, karim), cm(zahra, hana), cm(zahra, nada), cm(zahra, sara)]);
+        var tk = demo.t('tasks');
+        tk.forEach(function (t) { if (/Nour|نور/.test(t.title)) t.client_id = nour.id; if (/Atlas|أطلس/.test(t.title)) t.client_id = atlas.id; });
+        tk.push({ id: uid(), created_by: boss.id, assigned_to: nada.id, title: SL('Design the Ramadan post set', 'تصميم بوستات رمضان'), description: SL('6 posts, brand colours.', '6 بوستات بألوان الهوية.'), priority: 'high', status: 'in_progress', due_date: d(2), client_id: zahra.id, created_at: ago(3), updated_at: ago(1) });
+        tk.push({ id: uid(), created_by: boss.id, assigned_to: hana.id, title: SL('Schedule next week captions', 'جدولة كابشنز الأسبوع الجاي'), description: '', priority: 'normal', status: 'todo', due_date: d(4), client_id: zahra.id, created_at: ago(2), updated_at: ago(2) });
+        tk.push({ id: uid(), created_by: boss.id, assigned_to: karim.id, title: SL('Colour grade the gym promo', 'كولور جريدينج لإعلان الجيم'), description: SL('Warm, high contrast.', 'ألوان دافية وكونتراست عالي.'), priority: 'normal', status: 'todo', due_date: d(-1), client_id: atlas.id, created_at: ago(5), updated_at: ago(5) });
+        demo.saveT('tasks', tk);
+        var lv = demo.t('leaves');
+        lv.push({ id: uid(), user_id: nada.id, type: 'annual', start_date: d(3), end_date: d(5), days: 3, reason: '', status: 'approved', created_at: ago(8) });
+        lv.push({ id: uid(), user_id: karim.id, type: 'annual', start_date: d(8), end_date: d(10), days: 3, reason: SL('Short break', 'راحة قصيرة'), status: 'approved', created_at: ago(7) });
+        lv.push({ id: uid(), user_id: hana.id, type: 'sick', start_date: d(1), end_date: d(1), days: 1, reason: '', status: 'approved', created_at: ago(1) });
+        demo.saveT('leaves', lv);
+      })();
       jset('crm.session', boss.id); me = pub(boss); return me;
     }
   };
-  function pub(u) { return { id: u.id, email: u.email, name: u.name, role: u.role }; }
+  function pub(u) { return { id: u.id, email: u.email, name: u.name, role: u.role, team: u.team || '' }; }
 
   /* ---------------- LIVE engine (Supabase REST) ---------------- */
   var base = (CFG.supabaseUrl || '').replace(/\/+$/, '');
@@ -128,10 +155,10 @@
       if (!tok) { me = null; return null; }
       if (Date.now() > tok.exp && !(await refresh())) { me = null; return null; }
       var u = await api('/auth/v1/user', {}); var rows = await api('/rest/v1/profiles?id=eq.' + u.id + '&select=*', {});
-      me = rows[0] ? { id: rows[0].id, email: rows[0].email, name: rows[0].name, role: rows[0].role } : { id: u.id, email: u.email, name: u.email, role: 'employee' };
+      me = rows[0] ? { id: rows[0].id, email: rows[0].email, name: rows[0].name, role: rows[0].role, team: rows[0].team || '' } : { id: u.id, email: u.email, name: u.email, role: 'employee' };
       return me;
     },
-    profiles: async function () { return api('/rest/v1/profiles?select=id,email,name,role&order=created_at.asc', {}); },
+    profiles: async function () { return api('/rest/v1/profiles?select=id,email,name,role,team&order=created_at.asc', {}); },
     list: async function (t) { return api('/rest/v1/' + t + '?select=*&order=created_at.desc&limit=1000', {}); },
     insert: async function (t, row) { var j = await api('/rest/v1/' + t, { method: 'POST', body: row, headers: { Prefer: 'return=representation' } }); return j[0]; },
     update: async function (t, id, patch) { var j = await api('/rest/v1/' + t + '?id=eq.' + id, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } }); return j[0]; },
@@ -153,7 +180,7 @@
     },
     insert: async function (t, row) {
       row = Object.assign({}, row);
-      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else if (['notifications', 'decisions', 'stars', 'broadcasts'].indexOf(t) < 0) row.user_id = me.id;
+      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else if (['notifications', 'decisions', 'stars', 'broadcasts', 'client_members'].indexOf(t) < 0) row.user_id = me.id;
       if (live) return remote.insert(t, row);
       row.id = uid(); row.created_at = now(); if (t === 'tasks') row.updated_at = row.created_at; if (t === 'attendance') { row.check_in = row.created_at; row.check_out = null; }
       var rows = demo.t(t); rows.push(row); demo.saveT(t, rows); return row;
@@ -171,6 +198,10 @@
     setRole: async function (id, role) {
       if (live) return remote.update('profiles', id, { role: role });
       var u = demo.users(); u.forEach(function (x) { if (x.id === id) x.role = role; }); demo.saveUsers(u);
+    },
+    setTeam: async function (id, team) {
+      if (live) return remote.update('profiles', id, { team: team });
+      var u = demo.users(); u.forEach(function (x) { if (x.id === id) x.team = team; }); demo.saveUsers(u);
     },
     resetDemo: function () { Object.keys(LS).filter(function (k) { return k.indexOf('crm.') === 0; }).forEach(function (k) { LS.removeItem(k); }); },
     me: function () { return me; },

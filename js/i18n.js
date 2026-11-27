@@ -3,6 +3,7 @@
   'use strict';
   var D = {
     ar: {
+      'f.client': 'Client', 'cl.members': 'الفريق على العميل', 'cl.manage': 'اختار الفريق', 'cl.tasks': 'Tasks', 'cl.addtask': 'ضيف Task', 'cl.nomem': 'لسه محدش متعيّن.', 'cl.notask': 'مفيش Tasks لسه.', 'team.of': 'التيم', 'team.production': 'الإنتاج', 'team.editing': 'المونتاج', 'team.design': 'التصميم', 'team.social': 'السوشيال ميديا', 'team.none': 'من غير تيم', 'prof.clients': 'Clients', 'cal.h': 'مين في إجازة', 'cal.none': 'محدش في إجازة اليوم ده.', 'cal.pending': 'مستني', 'cl.people': 'أفراد', 'cl.open': 'مفتوحة', 'cl.done': 'خلصت', 'none.client': 'من غير عميل',
       app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'ثانية واحدة…',
       'auth.in': 'Login', 'auth.up': 'حساب جديد', 'auth.email': 'الإيميل', 'auth.pw': 'كلمة السر', 'auth.name': 'اسمك',
       'auth.go.in': 'ادخل', 'auth.go.up': 'اعمل حساب', 'auth.demo': 'جرّب النسخة التجريبية', 'auth.hint.up': 'أول حساب بيبقى أدمن.',
@@ -42,6 +43,7 @@
       'balance.of': 'متبقي من', 'used': 'تم استخدامها', 'offline': 'مفيش إنترنت'
     },
     en: {
+      'f.client': 'Client', 'cl.members': 'Team on this client', 'cl.manage': 'Choose team', 'cl.tasks': 'Tasks', 'cl.addtask': 'Add Task', 'cl.nomem': 'Nobody assigned yet.', 'cl.notask': 'No Tasks yet.', 'team.of': 'Team', 'team.production': 'Production', 'team.editing': 'Editing', 'team.design': 'Design', 'team.social': 'Social media', 'team.none': 'No team', 'prof.clients': 'Clients', 'cal.h': 'Who is off', 'cal.none': 'Nobody is off this day.', 'cal.pending': 'pending', 'cl.people': 'people', 'cl.open': 'open', 'cl.done': 'Done', 'none.client': 'No client',
       app: 'Shadows', tag: 'WE MOVE IN SILENCE.', loading: 'One moment…',
       'auth.in': 'Sign in', 'auth.up': 'New account', 'auth.email': 'Email', 'auth.pw': 'Password', 'auth.name': 'Your name',
       'auth.go.in': 'Sign in', 'auth.go.up': 'Create account', 'auth.demo': 'Try the demo', 'auth.hint.up': 'The first account becomes admin.',

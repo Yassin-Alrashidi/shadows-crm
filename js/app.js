@@ -5,7 +5,7 @@
   var CFG = window.CRM_CONFIG || {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var ORDER = ['home', 'tasks', 'attend', 'leaves', 'clients', 'expenses', 'assets', 'resign', 'me'];
-  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [] };
+  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [], client_members: [] };
   var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
@@ -19,6 +19,54 @@
   function mineOrAll(rows, key) { return (isMgr() && scope === 'all') ? rows : rows.filter(function (r) { return r[key || 'user_id'] === me.id; }); }
   function scopeBar() { return isMgr() ? '<div class="chips"><button class="chip' + (scope === 'mine' ? ' on' : '') + '" data-scope="mine">' + T('mine') + '</button><button class="chip' + (scope === 'all' ? ' on' : '') + '" data-scope="all">' + T('team') + '</button></div>' : ''; }
   function chipBar(name, vals, prefix) { return '<div class="chips">' + ['all'].concat(vals).map(function (v) { return '<button class="chip' + (filters[name] === v ? ' on' : '') + '" data-f="' + name + ':' + v + '">' + (v === 'all' ? T('all') : T(prefix + v)) + '</button>'; }).join('') + '</div>'; }
+
+
+  /* ---------- teams, client members, leave calendar ---------- */
+  var TEAMS = ['production', 'editing', 'design', 'social'];
+  var PAL = ['#E11827', '#2F6FED', '#12A150', '#E08A00', '#8A3FFC', '#0E9AA7', '#D6336C', '#5C6B7A'];
+  var colOf = function (id) { var n = 0; String(id).split('').forEach(function (c) { n = (n * 31 + c.charCodeAt(0)) % 997; }); return PAL[n % PAL.length]; };
+  var teamLabel = function (t) { return t ? T('team.' + t) : T('team.none'); };
+  var clientName = function (id) { var c = D.clients.filter(function (x) { return x.id === id; })[0]; return c ? c.name : ''; };
+  var membersOf = function (cid) { var ids = D.client_members.filter(function (m) { return m.client_id === cid; }).map(function (m) { return m.user_id; }); return profiles.filter(function (p) { return ids.indexOf(p.id) > -1; }); };
+  var avatar = function (p) { var n = (p.name || p.email || '?').trim(); return '<span class="av" style="background:' + colOf(p.id) + '" title="' + esc(n) + '">' + esc(n.charAt(0).toUpperCase()) + '</span>'; };
+  var calM = null, calDay = null;
+  function ymd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function leaveCal() {
+    var loc = I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', today = ymd(new Date());
+    if (!calM) { calM = new Date(); calM.setDate(1); } if (!calDay) calDay = today;
+    var vis = D.leaves.filter(function (l) { return l.status === 'approved' || (l.status === 'pending' && (isMgr() || l.user_id === me.id)); });
+    var first = new Date(calM.getFullYear(), calM.getMonth(), 1), dim = new Date(calM.getFullYear(), calM.getMonth() + 1, 0).getDate();
+    var wk = I18N.lang === 'ar' ? 6 : 1, off = (first.getDay() - wk + 7) % 7;
+    var h = '<div class="cal"><div class="calh"><button class="calnav" data-cal="prev" aria-label="prev">' + (document.documentElement.dir === 'rtl' ? '&rsaquo;' : '&lsaquo;') + '</button><b>' + first.toLocaleDateString(loc, { month: 'long', year: 'numeric' }) + '</b><button class="calnav" data-cal="next" aria-label="next">' + (document.documentElement.dir === 'rtl' ? '&lsaquo;' : '&rsaquo;') + '</button></div><div class="calg">';
+    for (var i = 0; i < 7; i++) { var dd = new Date(2024, 0, 7 + wk + i); h += '<i class="wd">' + dd.toLocaleDateString(loc, { weekday: 'narrow' }) + '</i>'; }
+    for (i = 0; i < off; i++) h += '<span class="cd e"></span>';
+    for (var day = 1; day <= dim; day++) {
+      var key = calM.getFullYear() + '-' + ('0' + (calM.getMonth() + 1)).slice(-2) + '-' + ('0' + day).slice(-2);
+      var who = vis.filter(function (l) { return l.start_date <= key && l.end_date >= key; });
+      var dots = who.slice(0, 3).map(function (l) { return '<u style="background:' + colOf(l.user_id) + (l.status === 'pending' ? ';opacity:.4' : '') + '"></u>'; }).join('') + (who.length > 3 ? '<em>+</em>' : '');
+      h += '<button class="cd' + (key === today ? ' today' : '') + (key === calDay ? ' sel' : '') + '" data-cal="day:' + key + '"><span>' + day + '</span><div class="dots">' + dots + '</div></button>';
+    }
+    h += '</div>';
+    var offs = vis.filter(function (l) { return l.start_date <= calDay && l.end_date >= calDay; });
+    h += '<div class="calday"><small>' + I18N.date(calDay) + '</small>' + (offs.length ? offs.map(function (l) { var p = profiles.filter(function (x) { return x.id === l.user_id; })[0] || { id: l.user_id, name: '?' }; return '<div class="calrow">' + avatar(p) + '<b>' + esc(p.name || p.email) + '</b><span>' + T('lt.' + l.type) + (l.status === 'pending' ? ' · ' + T('cal.pending') : '') + '</span></div>'; }).join('') : '<div class="calnone">' + T('cal.none') + '</div>') + '</div></div>';
+    return h;
+  }
+  function clientTeamSheet(cid) {
+    var c = D.clients.filter(function (x) { return x.id === cid; })[0]; if (!c) return;
+    var on = membersOf(cid).map(function (p) { return p.id; });
+    openSheet('<h2>' + T('cl.manage') + '</h2><p class="sub">' + esc(c.name) + '</p>' + TEAMS.concat(['']).map(function (tm) {
+      var ps = profiles.filter(function (p) { return (p.team || '') === tm; }); if (!ps.length) return '';
+      return '<h2>' + teamLabel(tm) + '</h2><div class="pick">' + ps.map(function (p) { return '<button class="pk' + (on.indexOf(p.id) > -1 ? ' on' : '') + '" data-cm="' + cid + ':' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '</span></button>'; }).join('') + '</div>';
+    }).join('') + '<button class="btn big" data-cmdone="' + cid + '">' + T('save') + '</button>');
+  }
+  function toggleMember(cid, uid) {
+    var ex = D.client_members.filter(function (m) { return m.client_id === cid && m.user_id === uid; })[0];
+    return act(function () { return ex ? Store.remove('client_members', ex.id) : Store.insert('client_members', { client_id: cid, user_id: uid }); }).then(function () { clientTeamSheet(cid); });
+  }
+  function toggleMemberFromProfile(cid, uid) {
+    var ex = D.client_members.filter(function (m) { return m.client_id === cid && m.user_id === uid; })[0];
+    return act(function () { return ex ? Store.remove('client_members', ex.id) : Store.insert('client_members', { client_id: cid, user_id: uid }); }).then(function () { profileSheet(uid); });
+  }
 
   /* ---------- sheet ---------- */
   var sheetOpen = false;
@@ -111,7 +159,9 @@
     var done = mine.filter(function (t) { return t.status === 'done'; }), open = mine.filter(function (t) { return t.status !== 'done'; }), late = open.filter(isLate);
     var used = D.leaves.filter(function (l) { return l.user_id === uid && l.type === 'annual' && (l.status === 'approved' || l.status === 'pending'); }).reduce(function (s, l) { return s + (l.days || 0); }, 0), tot = CFG.annualLeaveDays || 21;
     openSheet('<h2>' + esc(p.name) + '</h2>' + (curStar() && curStar().user_id === uid ? '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small></div></div>' : '') + '<p class="sub" dir="ltr" style="text-align:start">' + esc(p.email) + ' · ' + T('role.' + p.role) + '</p>' +
-      '<div class="two3"><div class="kpi"><b>' + done.length + '</b><span>' + T('prof.done') + '</span></div><div class="kpi"><b>' + open.length + '</b><span>' + T('prof.open2') + '</span></div><div class="kpi red"><b>' + late.length + '</b><span>' + T('prof.late') + '</span></div></div>' +
+      (isMgr() ? '<label class="fld"><span>' + T('team.of') + '</span><select data-team="' + uid + '">' + ['']. concat(TEAMS).map(function (tm) { return '<option value="' + tm + '"' + ((p.team || '') === tm ? ' selected' : '') + '>' + teamLabel(tm) + '</option>'; }).join('') + '</select></label>' : (p.team ? '<p class="sub">' + teamLabel(p.team) + '</p>' : '')) +
+      '<h2>' + T('prof.clients') + '</h2>' + (isMgr() ? '<div class="pick">' + D.clients.filter(function (c) { return c.status !== 'closed'; }).map(function (c) { var on = D.client_members.some(function (m) { return m.client_id === c.id && m.user_id === uid; }); return '<button class="pk' + (on ? ' on' : '') + '" data-cmp="' + c.id + ':' + uid + '"><span>' + esc(c.name) + '</span></button>'; }).join('') + '</div>' : D.client_members.filter(function (m) { return m.user_id === uid; }).map(function (m) { return pill('active', clientName(m.client_id)); }).join('')) +
+      '<div class="two3" style="margin-top:14px"><div class="kpi"><b>' + done.length + '</b><span>' + T('prof.done') + '</span></div><div class="kpi"><b>' + open.length + '</b><span>' + T('prof.open2') + '</span></div><div class="kpi red"><b>' + late.length + '</b><span>' + T('prof.late') + '</span></div></div>' +
       '<div class="card"><div class="row"><b>' + T('prof.leave') + '</b><span>' + Math.max(0, tot - used) + ' ' + T('balance.of') + ' ' + tot + '</span></div><div class="bar"><i style="width:' + Math.min(100, used / tot * 100) + '%"></i></div></div>' +
       '<div class="card"><b>' + T('prof.att') + '</b><div class="m" style="margin-top:6px;color:var(--ash)">' + Object.keys(days).length + ' ' + T('prof.days') + ' · ' + hoursOf(att).toFixed(1) + ' ' + T('prof.hours') + '</div></div>' +
       '<h2>' + T('prof.tasks') + '</h2>' + (done.length ? done.slice(0, 5).map(function (t) { return '<div class="item" style="cursor:default"><div class="t">' + esc(t.title) + '</div><div class="m"><span>' + I18N.ago(t.updated_at || t.created_at) + '</span></div></div>'; }).join('') : EMPTY()));
@@ -140,7 +190,7 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets'];
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members'];
     var res = await Promise.all(names.map(function (n) { return Store.list(n); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
@@ -180,7 +230,7 @@
     var po = { urgent: 0, high: 1, normal: 2, low: 3 };
     rows.sort(function (a, b) { return (a.status === 'done') - (b.status === 'done') || po[a.priority] - po[b.priority] || (a.due_date || '9').localeCompare(b.due_date || '9'); });
     var h = '<h1>' + T('tasks') + '</h1>' + scopeBar() + chipBar('tasks', ['todo', 'in_progress', 'done'], 'st.');
-    h += rows.length ? '<div class="board">' + rows.map(function (t, k) { var late = isLate(t), soon = isSoon(t); return '<button class="item note ' + (late ? 'nr' : t.status === 'done' ? 'ng' : t.status === 'in_progress' ? 'nb2' : 'ny') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div>' + (t.description ? '<p class="nd">' + esc(String(t.description).slice(0, 70)) + '</p>' : '') + '<div class="m">' + pill(t.status, T('st.' + t.status)) + (late ? pill('urgent', T('overdue')) : soon ? pill('high', T('soon')) : '') + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') + '</div>' : EMPTY();
+    h += rows.length ? '<div class="board">' + rows.map(function (t, k) { var late = isLate(t), soon = isSoon(t); return '<button class="item note ' + (late ? 'nr' : t.status === 'done' ? 'ng' : t.status === 'in_progress' ? 'nb2' : 'ny') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div>' + (t.description ? '<p class="nd">' + esc(String(t.description).slice(0, 70)) + '</p>' : '') + '<div class="m">' + pill(t.status, T('st.' + t.status)) + (late ? pill('urgent', T('overdue')) : soon ? pill('high', T('soon')) : '') + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div>' + (t.client_id || (isMgr() && scope === 'all' && t.assigned_to) ? '<div class="nf">' + (t.client_id ? '<span class="ncl">' + esc(clientName(t.client_id)) + '</span>' : '') + (isMgr() && scope === 'all' && t.assigned_to ? '<span>' + esc((nameOf(t.assigned_to) || '').split(' ')[0]) + '</span>' : '') + '</div>' : '') + '</button>'; }).join('') + '</div>' : EMPTY();
     return h;
   };
   function hm(s) { return new Date(s).toLocaleTimeString(I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', { hour: '2-digit', minute: '2-digit' }); }
@@ -203,6 +253,7 @@
     var tot = CFG.annualLeaveDays || 21, u = used.annual || 0;
     var h = '<h1>' + T('leaves') + '</h1><div class="card"><div class="row"><b>' + T('lt.annual') + '</b><span>' + Math.max(0, tot - u) + ' ' + T('balance.of') + ' ' + tot + ' ' + T('days') + '</span></div><div class="bar"><i style="width:' + Math.min(100, u / tot * 100) + '%"></i></div><small style="color:var(--ash)">' + u + ' ' + T('days') + ' ' + T('used') + (used.sick ? ' · ' + T('lt.sick') + ' ' + used.sick : '') + (used.unpaid ? ' · ' + T('lt.unpaid') + ' ' + used.unpaid : '') + (used.emergency ? ' · ' + T('lt.emergency') + ' ' + used.emergency : '') + '</small></div>';
     var rows = mineOrAll(D.leaves).filter(function (l) { return filters.leaves === 'all' || l.status === filters.leaves; });
+    h += '<h2>' + T('cal.h') + '</h2>' + leaveCal() + '<h2>' + T('leaves') + '</h2>';
     h += scopeBar() + chipBar('leaves', ['pending', 'approved', 'rejected', 'cancelled'], 'ls.');
     h += rows.length ? rows.map(function (l) { return '<button class="item" data-leave="' + l.id + '"><div class="t">' + T('lt.' + l.type) + ' · ' + l.days + ' ' + T('dayn') + '</div><div class="m">' + pill(l.status, T('ls.' + l.status)) + '<span dir="ltr">' + I18N.date(l.start_date) + ' → ' + I18N.date(l.end_date) + '</span>' + (scope === 'all' && isMgr() ? '<span>' + esc(nameOf(l.user_id)) + '</span>' : '') + '</div></button>'; }).join('') : EMPTY();
     return h;
@@ -211,7 +262,7 @@
     var q = filters.q.toLowerCase();
     var rows = D.clients.filter(function (c) { return (filters.clients === 'all' || c.status === filters.clients) && (!q || [c.name, c.contact, c.phone, c.email].join(' ').toLowerCase().indexOf(q) > -1); });
     var h = '<h1>' + T('clients') + '</h1><input id="q" type="search" placeholder="' + T('search') + '" value="' + esc(filters.q) + '" style="margin-bottom:10px">' + chipBar('clients', ['lead', 'active', 'paused', 'closed'], 'cs.');
-    h += rows.length ? rows.map(function (c) { return '<button class="item" data-client="' + c.id + '"><div class="t">' + esc(c.name) + '</div><div class="m">' + pill(c.status, T('cs.' + c.status)) + (c.contact ? '<span>' + esc(c.contact) + '</span>' : '') + (c.phone ? '<span dir="ltr">' + esc(c.phone) + '</span>' : '') + '</div></button>'; }).join('') : EMPTY();
+    h += rows.length ? rows.map(function (c) { return '<button class="item" data-client="' + c.id + '"><div class="t">' + esc(c.name) + '</div><div class="m">' + pill(c.status, T('cs.' + c.status)) + (c.contact ? '<span>' + esc(c.contact) + '</span>' : '') + (c.phone ? '<span dir="ltr">' + esc(c.phone) + '</span>' : '') + '</div><div class="cmeta"><div class="avs">' + membersOf(c.id).slice(0, 5).map(avatar).join('') + '</div><span>' + D.tasks.filter(function (t) { return t.client_id === c.id && t.status !== 'done'; }).length + ' ' + T('cl.open') + ' Tasks</span></div></button>'; }).join('') : EMPTY();
     return h;
   };
   V.resign = function () {
@@ -222,14 +273,14 @@
     return h;
   };
   V.me = function () {
-    var h = '<h1>' + esc(me.name) + '</h1><p class="sub" dir="ltr" style="text-align:start">' + esc(me.email) + ' · ' + T('role.' + me.role) + '</p>' +
+    var h = '<h1>' + esc(me.name) + '</h1><p class="sub" dir="ltr" style="text-align:start">' + esc(me.email) + ' · ' + T('role.' + me.role) + (me.team ? ' · ' + teamLabel(me.team) : '') + '</p>' +
       '<div class="acts" style="margin:0 0 14px"><button class="btn" id="mlang">' + T('lang') + '</button><button class="btn danger" id="mout">' + T('logout') + '</button></div><p class="sub">' + T('install') + '</p>';
     h += '<button class="item" data-prof="' + me.id + '">' + T('prof.open') + '</button>';
     if (isMgr()) {
       h += '<div class="acts" style="margin:0 0 6px"><button class="btn" data-act="report">' + T('report') + '</button><button class="btn" data-act="log">' + T('log') + '</button></div>';
       h += '<h2>' + T('team.h') + '</h2>' + profiles.map(function (p) {
         var sel = pill(p.role, T('role.' + p.role));
-        return '<button class="item row" data-prof="' + p.id + '"><div><div class="t">' + esc(p.name) + '</div><small dir="ltr" style="color:var(--ash)">' + esc(p.email) + '</small></div>' + sel + '</button>'; }).join('');
+        return '<button class="item row" data-prof="' + p.id + '"><div><div class="t">' + esc(p.name) + '</div><small dir="ltr" style="color:var(--ash)">' + esc(p.email) + '</small>' + (p.team ? '<small style="color:var(--ash);display:block">' + teamLabel(p.team) + '</small>' : '') + '</div>' + sel + '</button>'; }).join('');
     }
     return h;
   };
@@ -303,15 +354,16 @@
 
   /* ---------- forms ---------- */
   function f(sel) { return ($(sel, $('#sheetin')) || {}).value || ''; }
-  function newTask() {
+  function newTask(cid0) {
     var mgr = isMgr(), pv = null;
+    var clSel = '<label class="fld"><span>' + T('f.client') + '</span><select id="fcl"><option value="">' + T('none.client') + '</option>' + D.clients.filter(function (c) { return c.status !== 'closed'; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === cid0 ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>';
     var who = mgr ? '<label class="fld"><span>' + T('f.assignee') + '</span><select id="fw"><option value="*">' + T('whole') + '</option>' + profiles.map(function (p) { return '<option value="' + p.id + '"' + (p.id === me.id ? ' selected' : '') + '>' + esc(p.name || p.email) + '</option>'; }).join('') + '</select></label>' : '';
-    openSheet('<h2>' + T('new.task') + '</h2><label class="fld"><span>' + T('f.title') + '</span><input id="ft"></label>' + who + '<div class="two"><label class="fld"><span>' + T('f.prio') + '</span><select id="fp">' + options(['low', 'normal', 'high', 'urgent'], 'pr.', 'normal') + '</select></label><label class="fld"><span>' + T('f.due') + '</span><input id="fdu" type="date" dir="ltr"></label></div><label class="fld"><span>' + T('f.desc') + '</span><textarea id="fd"></textarea></label>' + voiceBox('vb1') + '<button class="btn big" id="ok">' + T('send') + '</button>');
+    openSheet('<h2>' + T('new.task') + '</h2><label class="fld"><span>' + T('f.title') + '</span><input id="ft"></label>' + who + clSel + '<div class="two"><label class="fld"><span>' + T('f.prio') + '</span><select id="fp">' + options(['low', 'normal', 'high', 'urgent'], 'pr.', 'normal') + '</select></label><label class="fld"><span>' + T('f.due') + '</span><input id="fdu" type="date" dir="ltr"></label></div><label class="fld"><span>' + T('f.desc') + '</span><textarea id="fd"></textarea></label>' + voiceBox('vb1') + '<button class="btn big" id="ok">' + T('send') + '</button>');
     bindVoice('vb1', function (r) { pv = r; });
     $('#ok').onclick = async function () {
       if (!f('#ft').trim()) return $('#ft').focus();
       var team = mgr && f('#fw') === '*';
-      var row = { title: f('#ft').trim(), assigned_to: team ? null : (mgr ? f('#fw') : me.id), team: team, priority: f('#fp'), due_date: f('#fdu') || null, description: f('#fd'), status: 'todo' };
+      var row = { title: f('#ft').trim(), assigned_to: team ? null : (mgr ? f('#fw') : me.id), team: team, priority: f('#fp'), due_date: f('#fdu') || null, description: f('#fd'), status: 'todo', client_id: f('#fcl') || null };
       var ok = await act(async function () { var r = await Store.insert('tasks', row); if (pv) await Store.insert('voice_notes', { task_id: r.id, audio: pv.data, secs: pv.secs }); await notify(team ? allIds() : [row.assigned_to], 'task_assigned', 'tasks', row.title); return r; }, 'sent');
       if (ok) { closeSheet(); goto(ORDER.indexOf('tasks')); }
     };
@@ -322,7 +374,7 @@
     var canSt = isMgr() || t.assigned_to === me.id || t.created_by === me.id;
     var members = profiles.filter(function (p) { return p.id !== t.created_by; });
     var team = t.team ? '<div class="ack">' + members.map(function (p) { return '<span class="' + (acked(t, p.id) ? 'y' : '') + '">' + (acked(t, p.id) ? '✓ ' : '') + esc(p.name || p.email) + '</span>'; }).join('') + '</div>' + (t.created_by !== me.id && !acked(t, me.id) ? '<button class="btn ok" id="ack" style="width:100%;margin-bottom:10px">' + T('ack.mine') + '</button>' : '') : '';
-    openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (isLate(t) ? pill('urgent', T('overdue')) : '') + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + ' · ' + (t.team ? T('whole') : t.assigned_to ? T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' + team +
+    openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (t.client_id ? '<button class="pill" data-client="' + t.client_id + '">' + esc(clientName(t.client_id)) + '</button>' : '') + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (isLate(t) ? pill('urgent', T('overdue')) : '') + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + ' · ' + (t.team ? T('whole') : t.assigned_to ? T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' + team +
       '<div id="vlist"></div>' + voiceBox('vb2') +
       (canSt ? '<label class="fld"><span>' + T('f.status') + '</span><select id="fs">' + options(['todo', 'in_progress', 'done'], 'st.', t.status) + '</select></label>' : '') +
       '<h2>' + T('comments') + '</h2>' + (cm.length ? cm.map(function (c) { return '<div class="cm"><small>' + esc(nameOf(c.user_id)) + ' · ' + I18N.ago(c.created_at) + '</small><div>' + esc(c.body) + '</div></div>'; }).join('') : '<div class="empty" style="padding:8px">' + T('none') + '</div>') +
@@ -396,7 +448,9 @@
     var c = D.clients.filter(function (x) { return x.id === id; })[0]; if (!c) return;
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
-      '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>');
+      '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
+      '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
+      '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
   }
 
@@ -457,7 +511,7 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-expense],[data-asset],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar]'); if (!t) return;
+    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-expense],[data-asset],[data-new],[data-role],[data-prof],[data-act],[data-nref],[data-pickstar],[data-cal],[data-cm],[data-cmp],[data-cmopen],[data-cmdone],[data-newtask]'); if (!t) return;
     var d = t.dataset;
     if (d.scope) { scope = d.scope; render(0); }
     else if (d.f) { var p = d.f.split(':'); filters[p[0]] = p[1]; render(0); }
@@ -473,6 +527,12 @@
     else if (d.new === 'asset') newAsset();
     else if (d.prof) profileSheet(d.prof);
     else if (d.pickstar) pickStar(d.pickstar);
+    else if (d.cal) { if (d.cal === 'prev') calM = new Date(calM.getFullYear(), calM.getMonth() - 1, 1); else if (d.cal === 'next') calM = new Date(calM.getFullYear(), calM.getMonth() + 1, 1); else calDay = d.cal.slice(4); render(0); }
+    else if (d.cm) { var q = d.cm.split(':'); toggleMember(q[0], q[1]); }
+    else if (d.cmp) { var q2 = d.cmp.split(':'); toggleMemberFromProfile(q2[0], q2[1]); }
+    else if (d.cmopen) clientTeamSheet(d.cmopen);
+    else if (d.cmdone) clientDetail(d.cmdone);
+    else if (d.newtask) newTask(d.newtask);
     else if (d.act === 'bcast') bcastSheet();
     else if (d.act === 'star') starSheet();
     else if (d.act === 'report') reportSheet();
@@ -480,7 +540,7 @@
     else if (d.nref) { closeSheet(); goto(ORDER.indexOf(d.nref)); }
   });
   document.addEventListener('input', function (e) { if (e.target.id === 'q') { filters.q = e.target.value; var pos = e.target.selectionStart; render(0); var q = $('#q'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (x) {} } } });
-  document.addEventListener('change', function (e) { if (e.target.id === 'attf') { attFilter = e.target.value; render(0); return; } var r = e.target.dataset && e.target.dataset.role; if (r) act(function () { return Store.setRole(r, e.target.value); }, 'saved'); });
+  document.addEventListener('change', function (e) { if (e.target.id === 'attf') { attFilter = e.target.value; render(0); return; } if (e.target.dataset && e.target.dataset.team !== undefined) { var tu = e.target.dataset.team, tv = e.target.value; act(function () { return Store.setTeam(tu, tv); }, 'saved').then(function () { profileSheet(tu); }); return; } var r = e.target.dataset && e.target.dataset.role; if (r) act(function () { return Store.setRole(r, e.target.value); }, 'saved'); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheetOpen) closeSheet(); });
   $('#stage').addEventListener('click', function (e) { var ab = e.target.closest('#attbtn'); if (ab) return toggleAttend(); var b = e.target.closest('#mlang'), o = e.target.closest('#mout'); if (b) toggleLang(); if (o) logout(); });
 
