@@ -56,7 +56,7 @@ html[data-theme=dark] .nf{color:rgba(242,238,224,.8)}
 .calrow{display:flex;align-items:center;gap:10px;padding:6px 0}.calrow span{margin-inline-start:auto;color:var(--mut);font-size:12.5px}
 .calnone{color:var(--mut);font-size:13.5px;padding:6px 0}
 /* v45 pin = the SHADOWS aperture emblem */
-.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=71) center/contain no-repeat!important;box-shadow:none!important}
+.item.note:before{top:-11px!important;margin-left:-16px!important;width:32px!important;height:32px!important;border-radius:0!important;background:url(../assets/pin.webp?v=73) center/contain no-repeat!important;box-shadow:none!important}
 .item.note{padding-top:24px!important}
 /* v46 nav eye: owl-eye shape (vector), lids, blink, lean. Transform-only motion. */
 html body #dial .eyebtn,html body #dial:not(.open) .eyebtn{width:110px!important;height:62px!important;margin-left:-55px!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important;background:transparent!important}

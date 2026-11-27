@@ -23,7 +23,7 @@
 
   /* ---------- teams, client members, leave calendar ---------- */
   var TEAMS = ['production', 'editing', 'design', 'social'];
-  var PAL = ['#E11827', '#2F6FED', '#12A150', '#E08A00', '#8A3FFC', '#0E9AA7', '#D6336C', '#5C6B7A'];
+  var PAL = ['#E11827', '#8A8A92', '#A9A9B0', '#55555C', '#6B6B73', '#7A7A82', '#C4C4CA', '#5C6B7A'];
   var colOf = function (id) { var n = 0; String(id).split('').forEach(function (c) { n = (n * 31 + c.charCodeAt(0)) % 997; }); return PAL[n % PAL.length]; };
   var teamLabel = function (t) { return t ? T('team.' + t) : T('team.none'); };
   var clientName = function (id) { var c = D.clients.filter(function (x) { return x.id === id; })[0]; return c ? c.name : ''; };
@@ -200,7 +200,9 @@
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
-  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 120 68" aria-hidden="true"><path d="M3 34Q60 -8 117 34Q60 76 3 34Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="34" r="15" fill="currentColor" opacity=".55"/><circle cx="60" cy="34" r="6.5" fill="var(--bg)"/></svg><div>' + T('none') + '</div></div>'; };
+  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 120 68" aria-hidden="true"><path d="M3 34Q60 -8 117 34Q60 76 3 34Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="34" r="15" fill="currentColor" opacity=".55"/><circle cx="60" cy="34" r="6.5" fill="var(--bg)"/></svg><div>' + EMPTYTXT() + '</div></div>'; };
+  function openLbl(n) { return I18N.lang === 'ar' ? (n ? 'Tasks مفتوحة: ' + n : 'مفيش Tasks مفتوحة') : (n === 0 ? 'No open tasks' : n + (n === 1 ? ' open task' : ' open tasks')); }
+  function EMPTYTXT() { var m = { home: ['All quiet. Nothing needs you.', 'هادي. مفيش حاجة محتاجاك.'], tasks: ['No tasks here. Tap + to add one.', 'مفيش مهام هنا. دوس + وضيف واحدة.'], attend: ['No check-ins yet.', 'مفيش حضور متسجل لسه.'], leaves: ['No leave requests.', 'مفيش طلبات إجازة.'], clients: ['No clients yet. Tap + to add one.', 'مفيش عملاء لسه. دوس + وضيف واحد.'], expenses: ['No expenses yet.', 'مفيش مصروفات لسه.'], assets: ['No files yet. Tap New asset to add a link.', 'مفيش ملفات لسه. دوس ملف جديد وضيف لينك.'], resign: ['No resignations.', 'مفيش استقالات.'], me: ['Nothing here.', 'مفيش حاجة هنا.'] }[ORDER[cur] || 'home']; return m ? L(m[0], m[1]) : T('none'); }
   var ENNAME = { expenses: 'EXPENSES', assets: 'ASSETS', home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
   var V = {};
   V.home = function () {
@@ -265,7 +267,7 @@
     var q = filters.q.toLowerCase();
     var rows = D.clients.filter(function (c) { return (filters.clients === 'all' || c.status === filters.clients) && (!q || [c.name, c.contact, c.phone, c.email].join(' ').toLowerCase().indexOf(q) > -1); });
     var h = '<h1>' + T('clients') + '</h1><input id="q" type="search" placeholder="' + T('search') + '" value="' + esc(filters.q) + '" style="margin-bottom:10px">' + chipBar('clients', ['lead', 'active', 'paused', 'closed'], 'cs.');
-    h += rows.length ? rows.map(function (c) { return '<button class="item" data-client="' + c.id + '"><div class="t">' + esc(c.name) + '</div><div class="m">' + pill(c.status, T('cs.' + c.status)) + (c.contact ? '<span>' + esc(c.contact) + '</span>' : '') + (c.phone ? '<span dir="ltr">' + esc(c.phone) + '</span>' : '') + '</div><div class="cmeta"><div class="avs">' + membersOf(c.id).slice(0, 5).map(avatar).join('') + '</div><span>' + D.tasks.filter(function (t) { return t.client_id === c.id && t.status !== 'done'; }).length + ' ' + T('cl.open') + (I18N.lang === 'ar' ? ' Tasks' : ' tasks') + '</span></div></button>'; }).join('') : EMPTY();
+    h += rows.length ? rows.map(function (c) { return '<button class="item" data-client="' + c.id + '"><div class="t">' + esc(c.name) + '</div><div class="m">' + pill(c.status, T('cs.' + c.status)) + (c.contact ? '<span>' + esc(c.contact) + '</span>' : '') + (c.phone ? '<span dir="ltr">' + esc(c.phone) + '</span>' : '') + '</div><div class="cmeta"><div class="avs">' + membersOf(c.id).slice(0, 5).map(avatar).join('') + '</div><span>' + openLbl(D.tasks.filter(function (t) { return t.client_id === c.id && t.status !== 'done'; }).length) + '</span></div></button>'; }).join('') : EMPTY();
     return h;
   };
   V.resign = function () {
@@ -344,7 +346,7 @@
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
   var AD = '0123456789', intro = { step: 4, N: 4 }, OW = 2064, FACE = [1032, 400], EYE = [959, 519], EYERING = 193;
   function arDig(root) {
-    if (I18N.lang !== 'ar' || !root) return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
+    return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
     while ((n = w.nextNode())) { var v = n.nodeValue; if (/[0-9]/.test(v) && v.indexOf('@') < 0 && !/^[\s+\d()-]{7,}$/.test(v) && !(n.parentNode.closest && n.parentNode.closest('script,style,textarea,input'))) list.push(n); }
     list.forEach(function (t) { t.nodeValue = t.nodeValue.replace(/[0-9]/g, function (d) { return AD[d]; }); });
   }
