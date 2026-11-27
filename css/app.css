@@ -44,8 +44,8 @@ h1{font-size:26px;margin:6px 0 4px;font-weight:800}h2{font-size:17px;margin:20px
 .item{display:block;width:100%;text-align:start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:10px}
 .item:active{background:#1a1a20}.item .t{font-weight:600;margin-bottom:4px}.item .m{color:var(--ash);font-size:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:#1c1c22;border:1px solid var(--line);color:var(--ash)}
-.pill.red,.pill.urgent,.pill.pending,.pill.open,.pill.lead{background:rgba(225,24,39,.15);color:#ff6b74;border-color:rgba(225,24,39,.4)}
-.pill.approved,.pill.resolved,.pill.accepted,.pill.active{background:rgba(40,160,95,.14);color:#58d68d;border-color:rgba(40,160,95,.4)}
+.pill.red,.pill.urgent,.pill.pending,.pill.todo,.pill.lead{background:rgba(225,24,39,.15);color:#ff6b74;border-color:rgba(225,24,39,.4)}
+.pill.approved,.pill.done,.pill.accepted,.pill.active{background:rgba(40,160,95,.14);color:#58d68d;border-color:rgba(40,160,95,.4)}
 .pill.in_progress,.pill.high{background:rgba(240,160,40,.12);color:#f0b040;border-color:rgba(240,160,40,.4)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
 .chip{white-space:nowrap;padding:7px 14px;border-radius:99px;border:1px solid var(--line);color:var(--ash);background:#0c0c0f}.chip.on{background:var(--red);border-color:var(--red);color:#fff}

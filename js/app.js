@@ -4,9 +4,9 @@
   var T = function (k) { return I18N.t(k); };
   var CFG = window.CRM_CONFIG || {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var ORDER = ['home', 'tickets', 'leaves', 'clients', 'resign', 'me'];
-  var me = null, profiles = [], D = { tickets: [], ticket_comments: [], leaves: [], resignations: [], clients: [] };
-  var cur = 0, dial = null, scope = 'mine', filters = { tickets: 'all', leaves: 'all', clients: 'all', q: '' };
+  var ORDER = ['home', 'tasks', 'attend', 'leaves', 'clients', 'resign', 'me'];
+  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], leaves: [], resignations: [], clients: [] };
+  var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
 
@@ -33,7 +33,7 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tickets', 'ticket_comments', 'leaves', 'resignations', 'clients'];
+    var names = ['tasks', 'task_comments', 'attendance', 'leaves', 'resignations', 'clients'];
     var res = await Promise.all(names.map(function (n) { return Store.list(n); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
@@ -42,20 +42,20 @@
   /* ---------- panels ---------- */
   var V = {};
   V.home = function () {
-    var myOpen = D.tickets.filter(function (t) { return t.user_id === me.id && (t.status === 'open' || t.status === 'in_progress'); }).length;
+    var myOpen = D.tasks.filter(function (t) { return t.assigned_to === me.id && t.status !== 'done'; }).length;
     var pend = D.leaves.filter(function (l) { return l.status === 'pending' && (isMgr() || l.user_id === me.id); }).length;
     var act = D.clients.filter(function (c) { return c.status === 'active'; }).length;
-    var allOpen = D.tickets.filter(function (t) { return t.status === 'open' || t.status === 'in_progress'; }).length;
+    var allOpen = D.tasks.filter(function (t) { return t.status !== 'done'; }).length;
     var need = isMgr() ? pend + D.resignations.filter(function (r) { return r.status === 'pending'; }).length : 0;
     var used = D.leaves.filter(function (l) { return l.user_id === me.id && l.type === 'annual' && l.status !== 'rejected' && l.status !== 'cancelled'; }).reduce(function (a, l) { return a + (l.days || 0); }, 0);
     var tot = CFG.annualLeaveDays || 21, left = Math.max(0, tot - used);
     var h = '<h1>' + T('hi') + ' ' + esc((me.name || '').split(' ')[0]) + '</h1><p class="sub">' + T('hi.sub') + '</p><div class="grid">' +
-      '<div class="kpi red"><b>' + (isMgr() ? need : myOpen) + '</b><span>' + (isMgr() ? T('k.pending') : T('k.tickets')) + '</span></div>' +
-      '<div class="kpi"><b>' + (isMgr() ? allOpen : pend) + '</b><span>' + (isMgr() ? T('k.tickets') : T('k.leaves')) + '</span></div>' +
+      '<div class="kpi red"><b>' + (isMgr() ? need : myOpen) + '</b><span>' + (isMgr() ? T('k.pending') : T('k.tasks')) + '</span></div>' +
+      '<div class="kpi"><b>' + (isMgr() ? allOpen : pend) + '</b><span>' + (isMgr() ? T('k.tasks') : T('k.leaves')) + '</span></div>' +
       '<div class="kpi"><b>' + act + '</b><span>' + T('k.clients') + '</span></div>' +
       '<div class="kpi"><b>' + left + '</b><span>' + T('k.balance') + ' (' + T('days') + ')</span></div></div>';
     var ev = [];
-    D.tickets.forEach(function (t) { if (isMgr() || t.user_id === me.id) ev.push({ at: t.created_at, p: 'tickets', txt: t.title, who: t.user_id, st: t.status, k: 'st.' }); });
+    D.tasks.forEach(function (t) { if (isMgr() || t.assigned_to === me.id || t.created_by === me.id) ev.push({ at: t.created_at, p: 'tasks', txt: t.title, who: t.assigned_to || t.created_by, st: t.status, k: 'st.' }); });
     D.leaves.forEach(function (l) { if (isMgr() || l.user_id === me.id) ev.push({ at: l.created_at, p: 'leaves', txt: T('lt.' + l.type) + ' · ' + l.days + ' ' + T('dayn'), who: l.user_id, st: l.status, k: 'ls.' }); });
     D.resignations.forEach(function (r) { ev.push({ at: r.created_at, p: 'resign', txt: T('resign'), who: r.user_id, st: r.status, k: 'rs.' }); });
     ev.sort(function (a, b) { return (b.at || '').localeCompare(a.at || ''); });
@@ -63,10 +63,27 @@
     h += ev.length ? ev.slice(0, 8).map(function (e) { return '<button class="item" data-go="' + e.p + '"><div class="t">' + esc(e.txt) + '</div><div class="m">' + pill(e.st, T(e.k + e.st)) + '<span>' + esc(nameOf(e.who)) + '</span><span>' + I18N.ago(e.at) + '</span></div></button>'; }).join('') : '<div class="empty">' + T('none') + '</div>';
     return h;
   };
-  V.tickets = function () {
-    var rows = mineOrAll(D.tickets).filter(function (t) { return filters.tickets === 'all' || t.status === filters.tickets; });
-    var h = '<h1>' + T('tickets') + '</h1>' + scopeBar() + chipBar('tickets', ['open', 'in_progress', 'resolved', 'closed'], 'st.');
-    h += rows.length ? rows.map(function (t) { return '<button class="item" data-ticket="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + '<span>' + T('cat.' + (t.category || 'other')) + '</span>' + (scope === 'all' && isMgr() ? '<span>' + esc(nameOf(t.user_id)) + '</span>' : '') + '<span>' + I18N.ago(t.created_at) + '</span></div></button>'; }).join('') : '<div class="empty">' + T('none') + '</div>';
+  V.tasks = function () {
+    var rows = D.tasks.filter(function (t) { return (isMgr() && scope === 'all') || t.assigned_to === me.id || t.created_by === me.id; }).filter(function (t) { return filters.tasks === 'all' || t.status === filters.tasks; });
+    var po = { urgent: 0, high: 1, normal: 2, low: 3 };
+    rows.sort(function (a, b) { return (a.status === 'done') - (b.status === 'done') || po[a.priority] - po[b.priority] || (a.due_date || '9').localeCompare(b.due_date || '9'); });
+    var h = '<h1>' + T('tasks') + '</h1>' + scopeBar() + chipBar('tasks', ['todo', 'in_progress', 'done'], 'st.');
+    h += rows.length ? rows.map(function (t) { var late = t.due_date && t.status !== 'done' && t.due_date < new Date().toISOString().slice(0, 10); return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (t.assigned_to ? '<span>' + T('to') + ' ' + esc(nameOf(t.assigned_to)) + '</span>' : '') + (t.due_date ? '<span' + (late ? ' style="color:#ff6b74"' : '') + '>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="empty">' + T('none') + '</div>';
+    return h;
+  };
+  function hm(s) { return new Date(s).toLocaleTimeString(I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  function dur(a, b) { var m = Math.max(0, Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 60000)); return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2) + ' ' + T('hrs'); }
+  var attFilter = 'all';
+  V.attend = function () {
+    var mine = D.attendance.filter(function (r) { return r.user_id === me.id; }), open = mine.filter(function (r) { return !r.check_out; })[0];
+    var h = '<h1>' + T('attend') + '</h1><div class="card" style="text-align:center"><div style="color:var(--ash);margin-bottom:6px">' + (open ? T('att.since') + ' ' + hm(open.check_in) + ' · ' + dur(open.check_in) : T('att.out')) + '</div><button class="btn big' + (open ? ' danger' : '') + '" id="attbtn">' + T(open ? 'att.checkout' : 'att.checkin') + '</button></div>';
+    if (isMgr()) {
+      var here = D.attendance.filter(function (r) { return !r.check_out; });
+      h += '<h2>' + T('att.now') + ' (' + here.length + ')</h2>' + (here.length ? here.map(function (r) { return '<div class="card row"><b>' + esc(nameOf(r.user_id)) + '</b><span style="color:var(--ash)">' + hm(r.check_in) + ' · ' + dur(r.check_in) + '</span></div>'; }).join('') : '<div class="empty">' + T('none') + '</div>');
+      h += '<h2>' + T('att.hist') + '</h2><select id="attf" style="margin-bottom:10px"><option value="all">' + T('team') + '</option>' + profiles.map(function (p) { return '<option value="' + p.id + '"' + (attFilter === p.id ? ' selected' : '') + '>' + esc(p.name || p.email) + '</option>'; }).join('') + '</select>';
+    } else h += '<h2>' + T('att.hist') + '</h2>';
+    var rows = D.attendance.filter(function (r) { return isMgr() ? (attFilter === 'all' || r.user_id === attFilter) : r.user_id === me.id; }).sort(function (a, b) { return b.check_in.localeCompare(a.check_in); }).slice(0, 40);
+    h += rows.length ? rows.map(function (r) { return '<div class="item" style="cursor:default"><div class="t">' + (isMgr() ? esc(nameOf(r.user_id)) + ' · ' : '') + I18N.date(r.check_in) + '</div><div class="m"><span dir="ltr">' + hm(r.check_in) + ' → ' + (r.check_out ? hm(r.check_out) : '…') + '</span>' + pill(r.check_out ? 'done' : 'active', r.check_out ? dur(r.check_in, r.check_out) : T('att.in')) + '</div></div>'; }).join('') : '<div class="empty">' + T('none') + '</div>';
     return h;
   };
   V.leaves = function () {
@@ -97,7 +114,7 @@
       '<div class="acts" style="margin:0 0 14px"><button class="btn" id="mlang">' + T('lang') + '</button><button class="btn danger" id="mout">' + T('logout') + '</button></div><p class="sub">' + T('install') + '</p>';
     if (isMgr()) {
       h += '<h2>' + T('team.h') + '</h2>' + profiles.map(function (p) {
-        var sel = me.role === 'admin' && p.id !== me.id ? '<select data-role="' + p.id + '" style="width:auto;padding:6px 30px 6px 10px">' + options(['employee', 'manager', 'admin'], 'role.', p.role) + '</select>' : pill(p.role, T('role.' + p.role));
+        var sel = pill(p.role, T('role.' + p.role));
         return '<div class="card row"><div><div class="t">' + esc(p.name) + '</div><small dir="ltr" style="color:var(--ash)">' + esc(p.email) + '</small></div>' + sel + '</div>'; }).join('');
     }
     return h;
@@ -105,9 +122,10 @@
 
   /* ---------- render + transitions ---------- */
   function render(dir) {
-    var stage = $('#stage'), id = ORDER[cur], old = stage.querySelector('.panel');
+    var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
     var p = document.createElement('div'); p.className = 'panel'; p.innerHTML = V[id]();
     var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id;
+    [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
     $('#title').textContent = T(id);
     if (old) {
@@ -122,19 +140,23 @@
 
   /* ---------- forms ---------- */
   function f(sel) { return ($(sel, $('#sheetin')) || {}).value || ''; }
-  function newTicket() {
-    openSheet('<h2>' + T('new.ticket') + '</h2><label class="fld"><span>' + T('f.title') + '</span><input id="ft"></label><div class="two"><label class="fld"><span>' + T('f.cat') + '</span><select id="fc">' + options(['it', 'hr', 'finance', 'workspace', 'other'], 'cat.', 'it') + '</select></label><label class="fld"><span>' + T('f.prio') + '</span><select id="fp">' + options(['low', 'normal', 'high', 'urgent'], 'pr.', 'normal') + '</select></label></div><label class="fld"><span>' + T('f.desc') + '</span><textarea id="fd"></textarea></label><button class="btn big" id="ok">' + T('send') + '</button>');
-    $('#ok').onclick = async function () { if (!f('#ft').trim()) return $('#ft').focus(); var ok = await act(function () { return Store.insert('tickets', { title: f('#ft').trim(), category: f('#fc'), priority: f('#fp'), description: f('#fd'), status: 'open' }); }, 'sent'); if (ok) { closeSheet(); goto(1); } };
+  function newTask() {
+    var mgr = isMgr();
+    var who = mgr ? '<label class="fld"><span>' + T('f.assignee') + '</span><select id="fw">' + profiles.map(function (p) { return '<option value="' + p.id + '"' + (p.id === me.id ? ' selected' : '') + '>' + esc(p.name || p.email) + '</option>'; }).join('') + '</select></label>' : '';
+    openSheet('<h2>' + T('new.task') + '</h2><label class="fld"><span>' + T('f.title') + '</span><input id="ft"></label>' + who + '<div class="two"><label class="fld"><span>' + T('f.prio') + '</span><select id="fp">' + options(['low', 'normal', 'high', 'urgent'], 'pr.', 'normal') + '</select></label><label class="fld"><span>' + T('f.due') + '</span><input id="fdu" type="date" dir="ltr"></label></div><label class="fld"><span>' + T('f.desc') + '</span><textarea id="fd"></textarea></label><button class="btn big" id="ok">' + T('send') + '</button>');
+    $('#ok').onclick = async function () { if (!f('#ft').trim()) return $('#ft').focus(); var row = { title: f('#ft').trim(), assigned_to: mgr ? f('#fw') : me.id, priority: f('#fp'), due_date: f('#fdu') || null, description: f('#fd'), status: 'todo' }; var ok = await act(function () { return Store.insert('tasks', row); }, 'sent'); if (ok) { closeSheet(); goto(ORDER.indexOf('tasks')); } };
   }
-  function ticketDetail(id) {
-    var t = D.tickets.filter(function (x) { return x.id === id; })[0]; if (!t) return;
-    var cm = D.ticket_comments.filter(function (c) { return c.ticket_id === id; }).sort(function (a, b) { return a.created_at.localeCompare(b.created_at); });
-    openSheet('<h2>' + esc(t.title) + '</h2><div class="m" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + pill('', T('cat.' + (t.category || 'other'))) + '</div><p style="color:var(--ash)">' + esc(nameOf(t.user_id)) + ' · ' + I18N.ago(t.created_at) + '</p><p>' + esc(t.description) + '</p>' +
-      (isMgr() ? '<label class="fld"><span>' + T('f.status') + '</span><select id="fs">' + options(['open', 'in_progress', 'resolved', 'closed'], 'st.', t.status) + '</select></label>' : '') +
+  function taskDetail(id) {
+    var t = D.tasks.filter(function (x) { return x.id === id; })[0]; if (!t) return;
+    var cm = D.task_comments.filter(function (c) { return c.task_id === id; }).sort(function (a, b) { return a.created_at.localeCompare(b.created_at); });
+    var canSt = isMgr() || t.assigned_to === me.id || t.created_by === me.id;
+    openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + (t.assigned_to ? ' · ' + T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' +
+      (canSt ? '<label class="fld"><span>' + T('f.status') + '</span><select id="fs">' + options(['todo', 'in_progress', 'done'], 'st.', t.status) + '</select></label>' : '') +
       '<h2>' + T('comments') + '</h2>' + (cm.length ? cm.map(function (c) { return '<div class="cm"><small>' + esc(nameOf(c.user_id)) + ' · ' + I18N.ago(c.created_at) + '</small><div>' + esc(c.body) + '</div></div>'; }).join('') : '<div class="empty" style="padding:8px">' + T('none') + '</div>') +
-      '<div class="row" style="margin-top:10px"><input id="fcm" placeholder="' + T('comment.ph') + '"><button class="btn" id="cmok">' + T('send') + '</button></div>');
-    var s = $('#fs'); if (s) s.onchange = function () { act(function () { return Store.update('tickets', id, { status: s.value }); }, 'saved').then(function () { ticketDetail(id); }); };
-    $('#cmok').onclick = function () { var b = f('#fcm').trim(); if (!b) return; act(function () { return Store.insert('ticket_comments', { ticket_id: id, body: b }); }).then(function () { ticketDetail(id); }); };
+      '<div class="row" style="margin-top:10px"><input id="fcm" placeholder="' + T('comment.ph') + '"><button class="btn" id="cmok">' + T('send') + '</button></div>' + (isMgr() ? '<button class="btn ghost danger" id="tdel">' + T('delete') + '</button>' : ''));
+    var s = $('#fs'); if (s) s.onchange = function () { act(function () { return Store.update('tasks', id, { status: s.value }); }, 'saved').then(function () { taskDetail(id); }); };
+    $('#cmok').onclick = function () { var b = f('#fcm').trim(); if (!b) return; act(function () { return Store.insert('task_comments', { task_id: id, body: b }); }).then(function () { taskDetail(id); }); };
+    if ($('#tdel')) $('#tdel').onclick = function () { act(function () { return Store.remove('tasks', id); }, 'saved').then(closeSheet); };
   }
   function newLeave() {
     var today = new Date().toISOString().slice(0, 10);
@@ -143,7 +165,7 @@
       var a = f('#fa'), b = f('#fb'), err = $('#ferr'); if (!a || !b || b < a) { err.textContent = T('baddates'); return; }
       var clash = D.leaves.some(function (l) { return l.user_id === me.id && (l.status === 'pending' || l.status === 'approved') && !(b < l.start_date || a > l.end_date); });
       if (clash) { err.textContent = T('overlap'); return; }
-      var ok = await act(function () { return Store.insert('leaves', { type: f('#fl'), start_date: a, end_date: b, days: daysBetween(a, b), reason: f('#fr'), status: 'pending' }); }, 'sent'); if (ok) { closeSheet(); goto(2); }
+      var ok = await act(function () { return Store.insert('leaves', { type: f('#fl'), start_date: a, end_date: b, days: daysBetween(a, b), reason: f('#fr'), status: 'pending' }); }, 'sent'); if (ok) { closeSheet(); goto(ORDER.indexOf('leaves')); }
     };
   }
   function decideButtons(kind, id, row, yes, no, yesCls) {
@@ -171,7 +193,7 @@
       var last = f('#fa'), reason = f('#fr'); if (!last) return;
       openSheet('<h2>' + T('resign.confirm') + '</h2><p class="sub">' + T('resign.last') + ': ' + I18N.date(last) + '</p><div class="acts"><button class="btn danger" id="yes">' + T('resign.yes') + '</button><button class="btn" id="no">' + T('cancel') + '</button></div>');
       $('#no').onclick = closeSheet;
-      $('#yes').onclick = async function () { var ok = await act(function () { return Store.insert('resignations', { last_day: last, reason: reason, status: 'pending' }); }, 'sent'); if (ok) { closeSheet(); goto(4); } };
+      $('#yes').onclick = async function () { var ok = await act(function () { return Store.insert('resignations', { last_day: last, reason: reason, status: 'pending' }); }, 'sent'); if (ok) { closeSheet(); goto(ORDER.indexOf('resign')); } };
     };
   }
   function resignDetail(id) {
@@ -185,7 +207,7 @@
     $('#ok').onclick = async function () {
       if (!f('#fn1').trim()) return $('#fn1').focus();
       var row = { name: f('#fn1').trim(), contact: f('#fc1'), phone: f('#fp1'), email: f('#fe1'), status: f('#fs1'), notes: f('#fno') };
-      var ok = await act(function () { return c.id ? Store.update('clients', c.id, row) : Store.insert('clients', row); }, 'saved'); if (ok) { closeSheet(); if (cur !== 3) goto(3); }
+      var ok = await act(function () { return c.id ? Store.update('clients', c.id, row) : Store.insert('clients', row); }, 'saved'); if (ok) { closeSheet(); if (ORDER[cur] !== 'clients') goto(ORDER.indexOf('clients')); }
     };
     if ($('#del')) $('#del').onclick = function () { act(function () { return Store.remove('clients', c.id); }, 'saved').then(closeSheet); };
   }
@@ -199,23 +221,24 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-ticket],[data-leave],[data-client],[data-resign],[data-new],[data-role]'); if (!t) return;
+    var t = e.target.closest('[data-scope],[data-f],[data-go],[data-task],[data-leave],[data-client],[data-resign],[data-new],[data-role]'); if (!t) return;
     var d = t.dataset;
     if (d.scope) { scope = d.scope; render(0); }
     else if (d.f) { var p = d.f.split(':'); filters[p[0]] = p[1]; render(0); }
     else if (d.go) goto(ORDER.indexOf(d.go));
-    else if (d.ticket) ticketDetail(d.ticket);
+    else if (d.task) taskDetail(d.task);
     else if (d.leave) leaveDetail(d.leave);
     else if (d.client) clientDetail(d.client);
     else if (d.resign) resignDetail(d.resign);
     else if (d.new === 'resign') newResign();
   });
   document.addEventListener('input', function (e) { if (e.target.id === 'q') { filters.q = e.target.value; var pos = e.target.selectionStart; render(0); var q = $('#q'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (x) {} } } });
-  document.addEventListener('change', function (e) { var r = e.target.dataset && e.target.dataset.role; if (r) act(function () { return Store.setRole(r, e.target.value); }, 'saved'); });
+  document.addEventListener('change', function (e) { if (e.target.id === 'attf') { attFilter = e.target.value; render(0); return; } var r = e.target.dataset && e.target.dataset.role; if (r) act(function () { return Store.setRole(r, e.target.value); }, 'saved'); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheetOpen) closeSheet(); });
-  $('#stage').addEventListener('click', function (e) { var b = e.target.closest('#mlang'), o = e.target.closest('#mout'); if (b) toggleLang(); if (o) logout(); });
+  $('#stage').addEventListener('click', function (e) { var ab = e.target.closest('#attbtn'); if (ab) return toggleAttend(); var b = e.target.closest('#mlang'), o = e.target.closest('#mout'); if (b) toggleLang(); if (o) logout(); });
 
-  function quickAdd() { var id = ORDER[cur]; if (id === 'tickets' || id === 'home') newTicket(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); }
+  function toggleAttend() { var open = D.attendance.filter(function (r) { return r.user_id === me.id && !r.check_out; })[0]; act(function () { return open ? Store.update('attendance', open.id, { check_out: new Date().toISOString() }) : Store.insert('attendance', {}); }, open ? 'att.bye' : 'att.hi'); }
+  function quickAdd() { var id = ORDER[cur]; if (id === 'attend') return toggleAttend(); if (id === 'tasks' || id === 'home') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); }
   function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); $('#dialhint').textContent = T('dial.hint'); } }
   function chrome() { applyText(); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
   $('#applang').onclick = toggleLang; $('#authlang').onclick = toggleLang;

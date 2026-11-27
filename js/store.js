@@ -6,7 +6,7 @@
   var CFG = window.CRM_CONFIG || {};
   var live = !!(CFG.supabaseUrl && CFG.supabaseKey);
   var LS = window.localStorage;
-  var TABLES = ['tickets', 'ticket_comments', 'leaves', 'resignations', 'clients'];
+  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance'];
   var me = null; // current profile {id,email,name,role}
 
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(16).slice(2)); }
@@ -23,7 +23,7 @@
     signUp: function (o) {
       var users = demo.users();
       if (users.some(function (u) { return u.email === o.email.toLowerCase(); })) throw new Error('exists');
-      var u = { id: uid(), email: o.email.toLowerCase(), pw: o.password, name: o.name || o.email.split('@')[0], role: users.length ? 'employee' : 'admin', created_at: now() };
+      var u = { id: uid(), email: o.email.toLowerCase(), pw: o.password, name: o.name || o.email.split('@')[0], role: ((window.CRM_CONFIG||{}).adminEmails||[]).map(function(x){return x.toLowerCase()}).indexOf(o.email.toLowerCase()) > -1 ? 'admin' : 'employee', created_at: now() };
       users.push(u); demo.saveUsers(users); jset('crm.session', u.id); me = pub(u); return me;
     },
     signIn: function (o) {
@@ -41,10 +41,10 @@
       users.push(boss, a, b); demo.saveUsers(users);
       var d = function (n) { return new Date(Date.now() + n * 864e5).toISOString().slice(0, 10); };
       var ago = function (n) { return new Date(Date.now() - n * 864e5).toISOString(); };
-      demo.saveT('tickets', [
-        { id: uid(), user_id: a.id, title: 'Camera battery grips missing', category: 'workspace', priority: 'high', status: 'open', description: 'Two grips are missing from the studio kit.', created_at: ago(1), updated_at: ago(1) },
-        { id: uid(), user_id: b.id, title: 'Cloud storage is full', category: 'it', priority: 'urgent', status: 'in_progress', description: 'Cannot upload the Friday shoot.', created_at: ago(2), updated_at: ago(1) },
-        { id: uid(), user_id: boss.id, title: 'Payslip question', category: 'finance', priority: 'low', status: 'resolved', description: '', created_at: ago(6), updated_at: ago(4) }
+      demo.saveT('tasks', [
+        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Shoot the Nour Bakery reel', description: 'Friday morning. Bring the grips.', priority: 'high', status: 'in_progress', due_date: d(2), created_at: ago(1), updated_at: ago(1) },
+        { id: uid(), created_by: boss.id, assigned_to: b.id, title: 'Edit the Atlas Fitness teaser', description: 'Cut to 20 seconds, vertical.', priority: 'urgent', status: 'todo', due_date: d(1), created_at: ago(2), updated_at: ago(2) },
+        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Send the weekly report', description: '', priority: 'normal', status: 'done', due_date: d(-1), created_at: ago(6), updated_at: ago(4) }
       ]);
       demo.saveT('leaves', [
         { id: uid(), user_id: a.id, type: 'annual', start_date: d(9), end_date: d(12), days: 4, reason: 'Family trip', status: 'pending', created_at: ago(1) },
@@ -54,7 +54,12 @@
         { id: uid(), created_by: boss.id, name: 'Nour Bakery', contact: 'Mariam', phone: '+201000000001', email: '', status: 'active', notes: 'Monthly reels and product photos.', created_at: ago(20) },
         { id: uid(), created_by: boss.id, name: 'Atlas Fitness', contact: 'Hesham', phone: '+201000000002', email: '', status: 'lead', notes: 'Asked for a campaign quote.', created_at: ago(3) }
       ]);
-      demo.saveT('resignations', []); demo.saveT('ticket_comments', []);
+      demo.saveT('attendance', [
+        { id: uid(), user_id: a.id, check_in: ago(0.3), check_out: null, created_at: ago(0.3) },
+        { id: uid(), user_id: b.id, check_in: ago(1.4), check_out: ago(1.05), created_at: ago(1.4) },
+        { id: uid(), user_id: a.id, check_in: ago(1.4), check_out: ago(1.08), created_at: ago(1.4) }
+      ]);
+      demo.saveT('resignations', []); demo.saveT('task_comments', []);
       jset('crm.session', boss.id); me = pub(boss); return me;
     }
   };
@@ -122,13 +127,13 @@
     },
     insert: async function (t, row) {
       row = Object.assign({}, row);
-      if (t === 'clients') row.created_by = me.id; else row.user_id = me.id;
+      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else row.user_id = me.id;
       if (live) return remote.insert(t, row);
-      row.id = uid(); row.created_at = now(); if (t === 'tickets') row.updated_at = row.created_at;
+      row.id = uid(); row.created_at = now(); if (t === 'tasks') row.updated_at = row.created_at; if (t === 'attendance') { row.check_in = row.created_at; row.check_out = null; }
       var rows = demo.t(t); rows.push(row); demo.saveT(t, rows); return row;
     },
     update: async function (t, id, patch) {
-      patch = Object.assign({}, patch); if (t === 'tickets') patch.updated_at = now();
+      patch = Object.assign({}, patch); if (t === 'tasks') patch.updated_at = now();
       if (live) return remote.update(t, id, patch);
       var rows = demo.t(t), r = rows.filter(function (x) { return x.id === id; })[0]; if (r) Object.assign(r, patch); demo.saveT(t, rows); return r;
     },

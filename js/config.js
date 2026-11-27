@@ -3,5 +3,6 @@
 window.CRM_CONFIG = {
   supabaseUrl: '',
   supabaseKey: '',
-  annualLeaveDays: 21
+  annualLeaveDays: 21,
+  adminEmails: []  /* demo mode only; the live admins come from public.admin_emails in the database */
 };
