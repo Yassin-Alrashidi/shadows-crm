@@ -44,6 +44,7 @@
       '<path d="M0 22 L100 22 L100 37 L50 46 L0 37 Z" fill="#040203"/><path d="M0 37 L50 46 L100 37" fill="none" stroke="#ff5a50" stroke-opacity=".8" stroke-width=".9"/>' +
       '<path d="M0 86 L100 86 L100 68 L50 63 L0 68Z" fill="#040203" fill-opacity=".4"/></g>' +
       '<path d="' + FR + '" fill="none" stroke="#ff6a5a" stroke-width="1.4" stroke-linejoin="miter"/>' +
+      '<circle id="dGlint" cx="50" cy="52" r="40" fill="url(#r2)" opacity="0" style="mix-blend-mode:normal"/><rect id="dScan" x="4" y="-6" width="92" height="3" fill="#ff3a3f" opacity="0"/>' +
       '<g id="dLid" style="transform-origin:50px 52px;transform:scaleY(0)"><path d="' + FR + '" fill="#050405"/></g></svg>';
   })();
 
@@ -57,7 +58,7 @@
     var row = cands.querySelector('.cwrow'), chips = [].slice.call(cands.querySelectorAll('.wc')), card = cands.querySelector('#pcard');
     var dragging = false, moved = false, sx = 0, base = 0, cand = cur, rot = cur * 40, lastDir = 1, capT = null;
 
-    function setRot(deg, anim) { ring.style.transition = anim ? 'transform .5s cubic-bezier(.2,.9,.3,1)' : 'none'; ring.style.transform = 'rotate(' + deg + 'deg)'; iris.style.transition = ring.style.transition; iris.style.transform = 'rotate(' + (-deg * .5) + 'deg)'; }
+    function setRot(deg, anim) { ring.style.transition = anim ? 'transform .5s cubic-bezier(.2,.9,.3,1)' : 'none'; ring.style.transform = 'rotate(' + deg + 'deg)'; iris.style.transition = ring.style.transition; iris.style.transform = 'rotate(' + (-deg * .8) + 'deg)'; }
     function setPupil(x) { pupil.style.transition = x === 0 ? 'transform .4s ease' : 'none'; pupil.style.transform = 'translateX(' + x.toFixed(1) + 'px)'; }
     setRot(rot, false);
     function layoutWheel() {
@@ -77,7 +78,7 @@
       var changed = i !== cur; show(false); setPupil(0); rot = i * 40; setRot(rot, true);
       var dir = i > cur ? 1 : i < cur ? -1 : 0; cur = i; o.onCommit(i, dir); caption();
     }
-    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 240 }); setTimeout(blink, 3500 + Math.random() * 3500); }
+    function blink() { if (!lid.animate) return; lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 240 }); if (Math.random() < .25) setTimeout(function () { lid.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: .45 }, { transform: 'scaleY(0)' }], { duration: 200 }); }, 300); setTimeout(blink, 3500 + Math.random() * 3500); }
     setTimeout(blink, 2500);
 
     var ccx = 0, ccy = 0, lastA = 0, total = 0, STEPDEG = 40;
@@ -98,7 +99,7 @@
       if (!moved) { moved = true; show(true); layoutWheel(); layoutCard(total > 0 ? 1 : -1); }
       var lo = -base * STEPDEG, hi = (n - 1 - base) * STEPDEG; total = Math.max(lo - 14, Math.min(hi + 14, total));
       var c = Math.max(0, Math.min(n - 1, base + Math.round(total / STEPDEG)));
-      setRot(base * STEPDEG + total, false); setPupil(Math.max(-9, Math.min(9, (total - prev) * 3 + 0)));
+      setRot(base * STEPDEG + total, false); setPupil(Math.max(-9, Math.min(9, (total / STEPDEG) * 6)));
       if (c !== cand) { var dir = c > cand ? 1 : -1; cand = c; lastDir = dir; layoutWheel(); layoutCard(dir); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (x) {} } }
     });
     function end() {
@@ -111,7 +112,13 @@
       if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); }
       else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (o.onTap) o.onTap(); }
     });
-    return { set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
+    var gl = el.querySelector('#dGlint'), sc = el.querySelector('#dScan');
+    function fx() {
+      if (gl.animate) { gl.animate([{ opacity: 0 }, { opacity: .75, offset: .3 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }); }
+      if (sc.animate) { sc.animate([{ opacity: 0, transform: 'translateY(0)' }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0, transform: 'translateY(88px)' }], { duration: 900, easing: 'cubic-bezier(.4,0,.2,1)' }); }
+      if (el.animate) el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: .3 }, { transform: 'scale(1)' }], { duration: 600 });
+    }
+    return { fx: fx, set: function (i) { cur = i; cand = i; rot = i * 40; setRot(rot, true); caption(); }, caption: caption, icon: icon };
   };
   window.Dial.icon = icon;
 })();

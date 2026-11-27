@@ -56,7 +56,7 @@
   function banners() {
     var h = '', bc = D.broadcasts.filter(function (b) { return Date.now() - new Date(b.created_at) < 48 * 36e5; })[0], st = curStar();
     if (bc) h += '<div class="bc' + (bc.urgent ? ' urgent' : '') + '"><div class="l">' + T('bc.h') + (bc.urgent ? ' · ' + T('bc.urgent') : '') + '</div><div>' + esc(bc.body) + '</div><small style="color:var(--ash)">' + esc(nameOf(bc.from_user)) + ' · ' + I18N.ago(bc.created_at) + '</small></div>';
-    if (st) h += '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small><div class="t" style="font-weight:800;font-size:18px">' + esc(nameOf(st.user_id)) + '</div></div></div>';
+    if (st) h += '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small><div class="t" style="font-weight:800;font-size:18px">' + esc(nameOf(st.user_id)) + ' ' + OWLM + '</div></div></div>';
     if (isMgr()) h += '<div class="acts" style="margin:0 0 12px"><button class="btn" data-act="bcast">' + T('bc.new') + '</button><button class="btn" data-act="star">' + T('star.pick') + '</button></div>';
     return h;
   }
@@ -85,6 +85,8 @@
   }
   $('#bell').onclick = function () { closeMenu(); notifCenter(); };
   function acked(t, uid) { return D.task_ack.some(function (x) { return x.task_id === t.id && x.user_id === uid; }); }
+  var OWLM = '<svg class="owlm" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 5l5 3 4-2 4 2 5-3-1 8-4 7h-8l-4-7z" fill="#e11827"/><circle cx="9" cy="11" r="2.2" fill="#060608"/><circle cx="15" cy="11" r="2.2" fill="#060608"/></svg>';
+  function stamp(s) { return s === 'approved' || s === 'rejected' ? '<span class="stamp ' + (s === 'approved' ? 'ok' : 'no') + '">' + T('ls.' + s) + '</span>' : ''; }
   function isLate(t) { return t.due_date && t.status !== 'done' && t.due_date < new Date().toISOString().slice(0, 10); }
   function isSoon(t) { var d = new Date().toISOString().slice(0, 10), tm = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return t.due_date && t.status !== 'done' && t.due_date >= d && t.due_date <= tm; }
   function logDecision(kind, row, st, note) {
@@ -229,7 +231,7 @@
   function render(dir) {
     if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
-    var p = document.createElement('div'); p.className = 'panel'; p.innerHTML = '<div class="eyebrow"><span>0' + (cur + 1) + ' / ' + (document.documentElement.lang === 'ar' ? T(id) : ENNAME[id]) + '</span></div>' + V[id]();
+    var p = document.createElement('div'); p.className = 'panel'; p.setAttribute('data-n', ('0' + (cur + 1)).replace(/[0-9]/g, function (c) { return document.documentElement.lang === 'ar' ? AD[c] : c; })); p.innerHTML = '<div class="eyebrow"><span>0' + (cur + 1) + ' / ' + (document.documentElement.lang === 'ar' ? T(id) : ENNAME[id]) + '</span></div>' + V[id]();
     var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = (I18N.lang === 'ar' ? '٠' : '0') + (I18N.lang === 'ar' ? AD[cur + 1] : (cur + 1));
     [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
@@ -247,6 +249,7 @@
     if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); setTimeout(function () { owlXf(intro.step, false); }, 0); $('#addb').hidden = true;
     var stage = $('#stage'); [].slice.call(stage.querySelectorAll('.panel')).forEach(function (o) { if (o.animate) { o.style.pointerEvents = 'none'; o.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 240, fill: 'forwards' }).onfinish = function () { o.remove(); }; } else o.remove(); });
     if (dial) dial.set(cur);
+    if (window.__fx && dial && dial.fx) { window.__fx = 0; setTimeout(dial.fx, 450); }
   }
   window.addEventListener('popstate', function () { if (inPanel) showHub(true); });
   function goto(i, dir) {
@@ -328,7 +331,7 @@
       rows.forEach(function (v) { var d = document.createElement('div'); d.className = 'cm'; var sm = document.createElement('small'); sm.textContent = nameOf(v.user_id) + ' · ' + I18N.ago(v.created_at) + ' · ' + fmt(v.secs || 0); var au = document.createElement('audio'); au.controls = true; au.preload = 'none'; au.src = v.audio; d.appendChild(sm); d.appendChild(au); box.appendChild(d); });
     }).catch(function () {});
     bindVoice('vb2', function (r) { act(async function () { await Store.insert('voice_notes', { task_id: id, audio: r.data, secs: r.secs }); await notify(others(), 'task_comment', 'tasks', t.title); }).then(function () { taskDetail(id); }); });
-    var s = $('#fs'); if (s) s.onchange = function () { act(async function () { await Store.update('tasks', id, { status: s.value }); if (s.value === 'done') await notify([t.created_by], 'task_done', 'tasks', t.title); }, 'saved').then(function () { taskDetail(id); }); };
+    var s = $('#fs'); if (s) s.onchange = function () { act(async function () { await Store.update('tasks', id, { status: s.value }); if (s.value === 'done') { window.__fx = 1; await notify([t.created_by], 'task_done', 'tasks', t.title); } }, 'saved').then(function () { taskDetail(id); }); };
     if ($('#ack')) $('#ack').onclick = function () { act(async function () { await Store.insert('task_ack', { task_id: id }); await notify([t.created_by], 'task_ack', 'tasks', t.title); }, 'ack.ok').then(function () { taskDetail(id); }); };
     $('#cmok').onclick = function () { var b = f('#fcm').trim(); if (!b) return; act(async function () { await Store.insert('task_comments', { task_id: id, body: b }); await notify(others(), 'task_comment', 'tasks', t.title); }).then(function () { taskDetail(id); }); };
     if ($('#tdel')) $('#tdel').onclick = function () { act(function () { return Store.remove('tasks', id); }, 'saved').then(closeSheet); };
