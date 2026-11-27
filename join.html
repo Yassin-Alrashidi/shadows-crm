@@ -87,11 +87,11 @@ body.done .hero .glow{opacity:1}
 <p class="lead">WE MOVE IN SILENCE. Fill this in once. Takes a minute.</p>
 <div class="card" id="fw">
 <form id="f" novalidate>
-<label><span class="n">01</span>Your Name<input class="en" name="name" autocomplete="name" dir="ltr"><p class="e"></p></label>
-<label><span class="n">02</span>If u had a nickname <small>(optional)</small><input name="nick" autocomplete="nickname" maxlength="30"></label>
-<label><span class="n">03</span>What's your role in the company?<input class="en" name="role" maxlength="60" dir="ltr"><p class="e"></p></label>
+<label><span class="n">01</span>Your Name<input class="en" name="name" enterkeyhint="next" autocomplete="name" dir="ltr"><p class="e"></p></label>
+<label><span class="n">02</span>If u had a nickname <small>(optional)</small><input name="nick" enterkeyhint="next" autocomplete="nickname" maxlength="30"></label>
+<label><span class="n">03</span>What's your role in the company?<input class="en" name="role" enterkeyhint="next" maxlength="60" dir="ltr"><p class="e"></p></label>
 <label dir="rtl"><span class="n">04</span>الباسورد اللي تحب يكون لإيميلك في الشركة
-<span class="pw"><input class="en" name="pw" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><small class="hint" dir="rtl">اكتب باسورد جديد خاص بالشغل، مش واحد بتستخدمه في مكان تاني.</small><p class="e"></p></label>
+<span class="pw"><input class="en" name="pw" enterkeyhint="done" type="password" autocomplete="new-password" dir="ltr"><button type="button" data-show>إظهار</button></span><small class="hint" dir="rtl">اكتب باسورد جديد خاص بالشغل، مش واحد بتستخدمه في مكان تاني.</small><p class="e"></p></label>
 <p class="e" id="top"></p>
 <button class="btn" id="go" type="submit">Submit</button>
 </form>
@@ -117,7 +117,7 @@ f.addEventListener('submit',async function(e){
   var v=function(n){return $(n).value.trim()};
   var name=v('name').replace(/\s+/g,' ');
   var meta={name:name,nickname:v('nick')||null,job_title:v('role')};
-  var go=document.getElementById('go');go.disabled=true;go.textContent='...';
+  var go=document.getElementById('go');go.disabled=true;go.textContent='Sending';
   var top=document.getElementById('top');top.textContent='';
   try{
     var C=window.JOIN_CONFIG||{};
