@@ -3,10 +3,12 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  email text, name text,
+  email text, name text, nickname text, job_title text,
   role text not null default 'employee' check (role in ('admin','manager','employee')),
   created_at timestamptz default now()
 );
+alter table public.profiles add column if not exists nickname text;
+alter table public.profiles add column if not exists job_title text;
 create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   created_by uuid not null default auth.uid() references public.profiles(id) on delete cascade,
@@ -57,8 +59,8 @@ begin
   if not is_adm and not exists (select 1 from public.invited_emails where lower(email) = lower(new.email)) then
     raise exception 'not invited';
   end if;
-  insert into public.profiles (id, email, name, role)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email,'@',1)),
+  insert into public.profiles (id, email, name, nickname, job_title, role)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email,'@',1)), left(new.raw_user_meta_data->>'nickname',30), left(new.raw_user_meta_data->>'job_title',60),
           case when is_adm and new.email_confirmed_at is not null then 'admin' else 'employee' end);
   return new;
 end $$;
