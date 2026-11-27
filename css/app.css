@@ -300,3 +300,7 @@ html[lang=ar] .item .t,html[lang=ar] .kpi b{font-family:'Cairo',sans-serif!impor
 #hubbg #owl{-webkit-mask-image:radial-gradient(ellipse 49% 46% at 50% 50%,#000 55%,transparent 100%),linear-gradient(to bottom,transparent 8%,#000 26%);-webkit-mask-composite:source-in;mask-image:radial-gradient(ellipse 49% 46% at 50% 50%,#000 55%,transparent 100%),linear-gradient(to bottom,transparent 8%,#000 26%);mask-composite:intersect}
 #hubbg #owl{width:4692px;height:1485px}
 #hubbg #owl{width:3096px;height:2190px;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 60%,transparent 100%);-webkit-mask-composite:source-over;mask-composite:add}
+/* v18 perf: composited-only owl, no filter/mask/blend on the moving layer */
+#hubbg #owl{filter:none!important;-webkit-mask-image:none!important;mask-image:none!important;mix-blend-mode:normal!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;contain:strict;image-rendering:auto}
+body.intro #dial,body.intro #dial.press{filter:none!important;transition:transform .9s cubic-bezier(.3,.7,.2,1)!important;will-change:transform}
+body.intro #hubbg{will-change:auto}
