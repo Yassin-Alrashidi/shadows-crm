@@ -252,14 +252,9 @@
       } else old.remove();
     } else if (dir === 'open' && p.animate) p.animate([{ transform: 'scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
   }
-  function openPanel(anim) { if (!inPanel) { history.pushState({ p: 1 }, ''); } inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
-  function showHub(noBack) {
-    if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); setTimeout(function () { owlXf(intro.step, false); }, 0); $('#addb').hidden = true;
-    var stage = $('#stage'); [].slice.call(stage.querySelectorAll('.panel')).forEach(function (o) { if (o.animate) { o.style.pointerEvents = 'none'; o.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 240, fill: 'forwards' }).onfinish = function () { o.remove(); }; } else o.remove(); });
-    if (dial) dial.set(cur); eyeState();
-    if (window.__fx && dial && dial.fx) { window.__fx = 0; setTimeout(dial.fx, 450); }
-  }
-  window.addEventListener('popstate', function () { if (inPanel) showHub(true); });
+  function openPanel(anim) { inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
+  function showHub() { cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(0); }
+  
   function goto(i, dir) {
     if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(i); return; }
     if (i === cur) return; var d = dir || (i > cur ? 1 : -1); if (document.documentElement.dir === 'rtl') d = -d; cur = i; render(d); if (dial) dial.set(i);
@@ -286,7 +281,7 @@
     $('#introbrand').style.opacity = s === 0 ? 1 : 0;
   }
   function startIntro() {
-    intro.step = 0; document.body.classList.add('intro'); owlXf(0, false); introHint();
+    document.body.classList.remove('intro'); cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(0);
   }
   $('#intro').onclick = function () {
     if (intro.step >= intro.N) return; intro.step++; owlXf(intro.step, true); introHint();
