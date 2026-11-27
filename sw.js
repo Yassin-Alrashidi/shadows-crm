@@ -1,5 +1,5 @@
-var C='shadows-crm-v49';
-var A=['./','index.html','css/app.css?v=49','css/light.css?v=49','css/polish.css?v=49','js/config.js?v=49','js/i18n.js?v=49','js/store.js?v=49','js/dial.js?v=49','js/fx.js?v=49','js/app.js?v=49','assets/pin.webp?v=49','join.html','results.html','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png'];
+var C='shadows-crm-v50';
+var A=['./','index.html','css/app.css?v=50','css/light.css?v=50','css/polish.css?v=50','js/config.js?v=50','js/i18n.js?v=50','js/store.js?v=50','js/dial.js?v=50','js/fx.js?v=50','js/app.js?v=50','assets/pin.webp?v=50','join.html','results.html','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png','assets/icon-512.png','assets/icon-maskable-512.png','assets/apple-touch-icon.png','assets/eye.webp','manifest.webmanifest'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(A)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==C}).map(function(x){return caches.delete(x)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request;if(r.method!=='GET')return;var u=new URL(r.url);if(u.origin!==location.origin)return;
