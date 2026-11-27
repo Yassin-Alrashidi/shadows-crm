@@ -22,10 +22,13 @@
     items.forEach(function (it, i) {
       h += '<b class="tk" style="transform:rotate(' + (i * STEP - STEP / 2) + 'deg)"></b><button type="button" class="wi" data-i="' + i + '" aria-label="' + it.label() + '" style="transform:rotate(' + (i * STEP) + 'deg) translateY(-' + RHO + 'px)"><span style="transform:rotate(0deg)">' + icon(it.id, 24, 1.8) + '</span></button>';
     });
-    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i></div><div class="dlabel" id="dlabel"></div>';
+    h += '<b class="tk" style="transform:rotate(' + ((n - 1) * STEP + STEP / 2) + 'deg)"></b></div><i class="notch"></i><svg class="oeye" viewBox="0 0 80 44" aria-hidden="true"><path d="M4 22 Q40 -3 76 22 Q40 47 4 22Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><g id="eIris"><circle cx="40" cy="22" r="10" fill="rgba(255,255,255,.16)" stroke="#fff" stroke-width="2"/><circle id="ePup" cx="40" cy="22" r="4.2" fill="#fff"/></g></svg></div><div class="dlabel" id="dlabel"></div>';
     el.innerHTML = h;
     var wheel = el.querySelector('#wheel'), lab = el.querySelector('#dlabel'), btns = [].slice.call(el.querySelectorAll('.wi'));
-    var dragging = false, moved = false, sx = 0, startRot = 0;
+    var dragging = false, moved = false, sx = 0, startRot = 0, iris = el.querySelector('#eIris'), pup = el.querySelector('#ePup');
+    function lean(x) { pup.style.transition = x ? 'none' : 'transform .35s ease'; pup.style.transform = 'translateX(' + x.toFixed(1) + 'px)'; }
+    function blink() { if (iris.animate && !dragging) iris.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.08)', offset: .5 }, { transform: 'scaleY(1)' }], { duration: 420, easing: 'ease-in-out' }); setTimeout(blink, 6000 + Math.random() * 5000); }
+    setTimeout(blink, 4000);
     function put(deg, anim) { wheel.style.transition = anim ? 'transform .4s cubic-bezier(.25,.8,.3,1)' : 'none'; wheel.style.transform = 'translateZ(0) rotate(' + (-deg).toFixed(2) + 'deg)'; rot = deg; }
     function mark(i) { btns.forEach(function (b, k) { b.classList.toggle('on', k === i); }); }
     function say(i, on) { lab.textContent = items[i].label(); lab.classList.toggle('on', !!on); }
@@ -35,17 +38,17 @@
     el.addEventListener('pointermove', function (e) {
       if (!dragging) return; var dx = e.clientX - sx;
       if (!moved && Math.abs(dx) < 6) return; moved = true;
-      var deg = Math.max(-8, Math.min((n - 1) * STEP + 8, startRot - dx * .38)); put(deg, false);
+      lean(Math.max(-6, Math.min(6, dx / 14))); var deg = Math.max(-8, Math.min((n - 1) * STEP + 8, startRot - dx * .38)); put(deg, false);
       var c = Math.max(0, Math.min(n - 1, Math.round(deg / STEP)));
       if (c !== cand) { cand = c; mark(c); say(c, true); if (navigator.vibrate) { try { navigator.vibrate(6); } catch (x) {} } }
     });
     function end(e) {
-      if (!dragging) return; dragging = false;
+      if (!dragging) return; dragging = false; lean(0);
       if (moved) { commit(cand); return; }
       var b = e && e.target && e.target.closest ? e.target.closest('.wi') : null; if (b) commit(+b.dataset.i);
     }
     el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; put(cur * STEP, true); mark(cur); lab.classList.remove('on'); } });
+    el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); } });
     el.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); } });
     return { set: function (i) { cur = i; cand = i; mark(i); put(i * STEP, true); }, caption: function () {}, icon: icon, fx: function () { if (el.animate) el.animate([{ opacity: 1 }, { opacity: .7, offset: .5 }, { opacity: 1 }], { duration: 900 }); }, setLid: function () {} };
   };

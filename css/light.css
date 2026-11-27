@@ -76,3 +76,13 @@ html[data-theme=dark] .item.note .nd,html[data-theme=dark] .item.note .m,html[da
 html[data-theme=dark] .item.note .pill{background:rgba(0,0,0,.28)!important;color:#F2EEE0!important}
 html[data-theme=dark] .empty img{opacity:.35}
 html[data-theme=dark] #dial .dome{background:#C9141F}
+
+#dial .oeye{position:absolute;left:50%;bottom:calc(var(--sab) + 16px);width:74px;height:41px;margin-left:-37px;pointer-events:none}
+#dial #eIris{transform-box:fill-box;transform-origin:center}
+/* polish */
+.panel .acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px!important}
+.panel .acts .btn{background:var(--bg)!important;color:var(--fg)!important;border:1px solid var(--ln)!important;font-weight:600;padding:9px 14px;font-size:13px}
+.dialwrap:after{content:"";position:fixed;left:0;right:0;bottom:0;height:200px;background:linear-gradient(to top,var(--bg) 25%,transparent);pointer-events:none;z-index:-1}
+.item,.card,.kpi{transition:none}
+.item:active{opacity:.7}
+.panel h1{margin-top:6px!important}
