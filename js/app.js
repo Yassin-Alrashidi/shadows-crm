@@ -208,7 +208,7 @@
     var need = isMgr() ? pend + D.expenses.filter(function (r) { return r.status === 'pending'; }).length + D.resignations.filter(function (r) { return r.status === 'pending'; }).length : 0;
     var used = D.leaves.filter(function (l) { return l.user_id === me.id && l.type === 'annual' && l.status !== 'rejected' && l.status !== 'cancelled'; }).reduce(function (a, l) { return a + (l.days || 0); }, 0);
     var tot = CFG.annualLeaveDays || 21, left = Math.max(0, tot - used);
-    var h = '<h1>' + T('hi') + ' ' + esc((me.name || '').split(' ')[0]) + '</h1><p class="sub">' + T('hi.sub') + '</p>' + banners() + '<div class="grid">' +
+    var h = '<h1>' + T('hi') + ' ' + esc((me.name || '').split(' ')[0]) + '</h1><button class="item" data-act="gsearch" style="margin:4px 0 14px;color:var(--mut)">' + L('Search tasks, clients, people', 'ابحث في المهام والعملاء والفريق') + '</button>' + banners() + '<div class="grid">' +
       '<div class="kpi red"><b>' + (isMgr() ? need : myOpen) + '</b><span>' + (isMgr() ? T('k.pending') : T('k.tasks')) + '</span></div>' +
       '<div class="kpi"><b>' + (isMgr() ? allOpen : pend) + '</b><span>' + (isMgr() ? T('k.tasks') : T('k.leaves')) + '</span></div>' +
       '<div class="kpi"><b>' + act + '</b><span>' + T('k.clients') + '</span></div>' +
@@ -272,12 +272,39 @@
     h += rows.length ? rows.map(function (r) { return '<button class="item" data-resign="' + r.id + '"><div class="t">' + T('resign.last') + ': ' + I18N.date(r.last_day) + '</div><div class="m">' + pill(r.status, T('rs.' + r.status)) + '<span>' + esc(nameOf(r.user_id)) + '</span><span>' + I18N.ago(r.created_at) + '</span></div></button>'; }).join('') : EMPTY();
     return h;
   };
+  /* ---------- global search and CSV export ---------- */
+  var L = function (en, ar) { return I18N.lang === 'ar' ? ar : en; };
+  function searchSheet() {
+    openSheet('<h2>' + L('Search', 'بحث') + '</h2><input id="gq" type="search" placeholder="' + L('Tasks, clients, people', 'مهام، عملاء، أشخاص') + '" autocomplete="off"><div id="gres"></div>');
+    var inp = $('#gq'); inp.focus();
+    inp.oninput = function () {
+      var q = inp.value.trim().toLowerCase(), h = '';
+      if (q) {
+        var tk = D.tasks.filter(function (t) { return (t.title + ' ' + (t.description || '')).toLowerCase().indexOf(q) > -1; }).slice(0, 8);
+        var cl = D.clients.filter(function (c) { return (c.name + ' ' + (c.contact || '')).toLowerCase().indexOf(q) > -1; }).slice(0, 6);
+        var pp = profiles.filter(function (p) { return (p.name + ' ' + (p.email || '')).toLowerCase().indexOf(q) > -1; }).slice(0, 6);
+        if (tk.length) h += '<h2>Tasks</h2>' + tk.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div></button>'; }).join('');
+        if (cl.length) h += '<h2>Clients</h2>' + cl.map(function (c) { return '<button class="item" data-client="' + c.id + '"><div class="t">' + esc(c.name) + '</div></button>'; }).join('');
+        if (pp.length) h += '<h2>' + L('People', 'الفريق') + '</h2>' + pp.map(function (p) { return '<button class="item" data-prof="' + p.id + '"><div class="t">' + esc(p.name) + '</div></button>'; }).join('');
+        if (!h) h = '<p class="m" style="padding:14px 0">' + L('Nothing found.', 'مفيش نتيجة.') + '</p>';
+      }
+      $('#gres').innerHTML = h;
+    };
+  }
+  function exportCSV() {
+    var q = function (v) { v = v == null ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; };
+    var sets = { tasks: ['title', 'status', 'priority', 'due_date', 'assigned_to', 'client_id'], leaves: ['user_id', 'type', 'start_date', 'end_date', 'status'], expenses: ['user_id', 'kind', 'amount', 'note', 'status'], attendance: ['user_id', 'check_in', 'check_out'] };
+    var out = '';
+    Object.keys(sets).forEach(function (k) { out += k + '\n' + sets[k].map(q).join(',') + '\n' + (D[k] || []).map(function (r) { return sets[k].map(function (c) { return q(r[c]); }).join(','); }).join('\n') + '\n\n'; });
+    var b = new Blob(['\ufeff' + out], { type: 'text/csv;charset=utf-8' }), u = URL.createObjectURL(b), a = document.createElement('a');
+    a.href = u; a.download = 'shadows-export.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); URL.revokeObjectURL(u); }, 500);
+  }
   V.me = function () {
     var h = '<h1>' + esc(me.name) + '</h1><p class="sub" dir="ltr" style="text-align:start">' + esc(me.email) + ' · ' + T('role.' + me.role) + (me.team ? ' · ' + teamLabel(me.team) : '') + '</p>' +
       '<div class="acts" style="margin:0 0 14px"><button class="btn" id="mlang">' + T('lang') + '</button><button class="btn danger" id="mout">' + T('logout') + '</button></div><p class="sub">' + T('install') + '</p>';
-    h += '<button class="item" data-prof="' + me.id + '">' + T('prof.open') + '</button>';
+    h += '<button class="item" data-prof="' + me.id + '">' + T('prof.open') + '</button><button class="item" data-act="gsearch">' + L('Search', 'بحث') + '</button>';
     if (isMgr()) {
-      h += '<div class="acts" style="margin:0 0 6px"><button class="btn" data-act="report">' + T('report') + '</button><button class="btn" data-act="log">' + T('log') + '</button></div>';
+      h += '<div class="acts" style="margin:0 0 6px"><button class="btn" data-act="report">' + T('report') + '</button><button class="btn" data-act="log">' + T('log') + '</button><button class="btn" data-act="csv">' + L('Export CSV', 'تصدير CSV') + '</button></div>';
       h += '<h2>' + T('team.h') + '</h2>' + profiles.map(function (p) {
         var sel = pill(p.role, T('role.' + p.role));
         return '<button class="item row" data-prof="' + p.id + '"><div><div class="t">' + esc(p.name) + '</div><small dir="ltr" style="color:var(--ash)">' + esc(p.email) + '</small>' + (p.team ? '<small style="color:var(--ash);display:block">' + teamLabel(p.team) + '</small>' : '') + '</div>' + sel + '</button>'; }).join('');
@@ -535,6 +562,8 @@
     else if (d.newtask) newTask(d.newtask);
     else if (d.act === 'bcast') bcastSheet();
     else if (d.act === 'star') starSheet();
+    else if (d.act === 'gsearch') searchSheet();
+    else if (d.act === 'csv') exportCSV();
     else if (d.act === 'report') reportSheet();
     else if (d.act === 'log') logSheet();
     else if (d.nref) { closeSheet(); goto(ORDER.indexOf(d.nref)); }
