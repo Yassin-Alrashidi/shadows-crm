@@ -29,7 +29,7 @@
       '<clipPath id="alc"><path d="' + FR + '"/></clipPath></defs>' +
       '<path class="brow" d="M2 12 L50 -12 L98 12" fill="none" stroke="#e11827" stroke-width="3.2" stroke-linecap="square" stroke-linejoin="miter"/>' +
       '<path d="M14 15 L50 -1 L86 15" fill="none" stroke="#910814" stroke-width="1.2"/><path d="M50 -1 L50 9" stroke="#e11827" stroke-width="1.2"/>' +
-      '<circle cx="50" cy="52" r="48" fill="url(#bz)" stroke="#e11827" stroke-opacity=".85" stroke-width="1.4"/>' +
+      '<circle class="bzfill" cx="50" cy="52" r="48" fill="url(#bz)" stroke="#e11827" stroke-opacity=".85" stroke-width="1.4"/>' +
       '<circle cx="50" cy="52" r="47" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="2"/>' +
       '<g id="dRing" style="transform-origin:50px 52px">' + ticks + '</g>' +
       '<circle cx="50" cy="52" r="40" fill="url(#gl)"/>' +

@@ -15,6 +15,7 @@
   var now = function () { return new Date().toISOString(); };
 
   /* ---------------- DEMO engine ---------------- */
+  function SL(en, ar) { try { return localStorage.getItem('crm.lang') === 'ar' ? ar : en; } catch (e) { return en; } }
   var demo = {
     users: function () { return jget('crm.users', []); },
     saveUsers: function (u) { jset('crm.users', u); },
@@ -36,19 +37,19 @@
     seed: function () {
       var users = demo.users(), ex = users.filter(function (u) { return u.email === 'demo@shadows.local'; })[0];
       if (ex) { jset('crm.session', ex.id); me = pub(ex); return me; }
-      var boss = { id: uid(), email: 'demo@shadows.local', pw: 'demo', name: 'Yassin (demo)', role: 'admin', created_at: now() };
-      var a = { id: uid(), email: 'sara@shadows.local', pw: 'demo', name: 'Sara', role: 'employee', created_at: now() };
-      var b = { id: uid(), email: 'omar@shadows.local', pw: 'demo', name: 'Omar', role: 'employee', created_at: now() };
+      var boss = { id: uid(), email: 'demo@shadows.local', pw: 'demo', name: SL('Yassin (demo)', 'ياسين (تجريبي)'), role: 'admin', created_at: now() };
+      var a = { id: uid(), email: 'sara@shadows.local', pw: 'demo', name: SL('Sara', 'سارة'), role: 'employee', created_at: now() };
+      var b = { id: uid(), email: 'omar@shadows.local', pw: 'demo', name: SL('Omar', 'عمر'), role: 'employee', created_at: now() };
       users.push(boss, a, b); demo.saveUsers(users);
       var d = function (n) { return new Date(Date.now() + n * 864e5).toISOString().slice(0, 10); };
       var ago = function (n) { return new Date(Date.now() - n * 864e5).toISOString(); };
       demo.saveT('tasks', [
-        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Shoot the Nour Bakery reel', description: 'Friday morning. Bring the grips.', priority: 'high', status: 'in_progress', due_date: d(1), created_at: ago(1), updated_at: ago(1) },
-        { id: uid(), created_by: boss.id, assigned_to: b.id, title: 'Edit the Atlas Fitness teaser', description: 'Cut to 20 seconds, vertical.', priority: 'urgent', status: 'todo', due_date: d(-1), created_at: ago(2), updated_at: ago(2) },
-        { id: uid(), created_by: boss.id, assigned_to: a.id, title: 'Send the weekly report', description: '', priority: 'normal', status: 'done', due_date: d(-1), created_at: ago(6), updated_at: ago(4) }
+        { id: uid(), created_by: boss.id, assigned_to: a.id, title: SL('Shoot the Nour Bakery reel', 'تصوير ريل مخبز نور'), description: SL('Friday morning. Bring the grips.', 'الجمعة الصبح. هاتوا معدات التثبيت.'), priority: 'high', status: 'in_progress', due_date: d(1), created_at: ago(1), updated_at: ago(1) },
+        { id: uid(), created_by: boss.id, assigned_to: b.id, title: SL('Edit the Atlas Fitness teaser', 'عمل مونتاج تيزر أطلس فيتنس'), description: SL('Cut to 20 seconds, vertical.', 'قصّه لـ 20 ثانية بالطول.'), priority: 'urgent', status: 'todo', due_date: d(-1), created_at: ago(2), updated_at: ago(2) },
+        { id: uid(), created_by: boss.id, assigned_to: a.id, title: SL('Send the weekly report', 'إرسال التقرير الأسبوعي'), description: '', priority: 'normal', status: 'done', due_date: d(-1), created_at: ago(6), updated_at: ago(4) }
       ]);
       demo.saveT('broadcasts', [
-        { id: uid(), from_user: boss.id, body: 'Client meeting moved to 4 PM today. Everyone in the studio by 3:30.', urgent: true, created_at: ago(0.1) }
+        { id: uid(), from_user: boss.id, body: SL('Client meeting moved to 4 PM today. Everyone in the studio by 3:30.', 'اجتماع العميل اتأجل لـ 4 العصر النهارده. الكل في الاستوديو 3:30.'), urgent: true, created_at: ago(0.1) }
       ]);
       demo.saveT('stars', [
         { id: uid(), user_id: a.id, week_start: (function () { var x = new Date(); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() - 6 + 7) % 7)); return x.toISOString().slice(0, 10); })(), picked_by: boss.id, created_at: ago(1) }
@@ -62,19 +63,19 @@
         { id: uid(), kind: 'leave', ref_id: uid(), subject_user: b.id, decided_by: boss.id, decision: 'approved', note: '', created_at: ago(5) }
       ]);
       demo.saveT('leaves', [
-        { id: uid(), user_id: a.id, type: 'annual', start_date: d(9), end_date: d(12), days: 4, reason: 'Family trip', status: 'pending', created_at: ago(1) },
+        { id: uid(), user_id: a.id, type: 'annual', start_date: d(9), end_date: d(12), days: 4, reason: SL('Family trip', 'سفر عائلي'), status: 'pending', created_at: ago(1) },
         { id: uid(), user_id: b.id, type: 'sick', start_date: d(-5), end_date: d(-4), days: 2, reason: '', status: 'approved', created_at: ago(6) }
       ]);
       demo.saveT('clients', [
-        { id: uid(), created_by: boss.id, name: 'Nour Bakery', contact: 'Mariam', phone: '+201000000001', email: '', status: 'active', notes: 'Monthly reels and product photos.', created_at: ago(20) },
-        { id: uid(), created_by: boss.id, name: 'Atlas Fitness', contact: 'Hesham', phone: '+201000000002', email: '', status: 'lead', notes: 'Asked for a campaign quote.', created_at: ago(3) }
+        { id: uid(), created_by: boss.id, name: SL('Nour Bakery', 'مخبز نور'), contact: SL('Mariam', 'مريم'), phone: '+201000000001', email: '', status: 'active', notes: SL('Monthly reels and product photos.', 'ريلز شهرية وصور منتجات.'), created_at: ago(20) },
+        { id: uid(), created_by: boss.id, name: SL('Atlas Fitness', 'أطلس فيتنس'), contact: SL('Hesham', 'هشام'), phone: '+201000000002', email: '', status: 'lead', notes: SL('Asked for a campaign quote.', 'طلب عرض سعر لحملة.'), created_at: ago(3) }
       ]);
       demo.saveT('attendance', [
         { id: uid(), user_id: a.id, check_in: ago(0.3), check_out: null, created_at: ago(0.3) },
         { id: uid(), user_id: b.id, check_in: ago(1.4), check_out: ago(1.05), created_at: ago(1.4) },
         { id: uid(), user_id: a.id, check_in: ago(1.4), check_out: ago(1.08), created_at: ago(1.4) }
       ]);
-      var tk = demo.t('tasks'); tk.push({ id: uid(), created_by: boss.id, assigned_to: null, team: true, title: 'Everyone: prepare for tomorrow\'s presentation', description: 'Read the deck and note two questions each.', priority: 'high', status: 'todo', due_date: d(1), created_at: ago(0.2), updated_at: ago(0.2) }); demo.saveT('tasks', tk);
+      var tk = demo.t('tasks'); tk.push({ id: uid(), created_by: boss.id, assigned_to: null, team: true, title: SL('Everyone: prepare for tomorrow\'s presentation', 'الكل: جهّزوا لعرض بكرة'), description: SL('Read the deck and note two questions each.', 'اقرأوا العرض وسجّلوا سؤالين لكل واحد.'), priority: 'high', status: 'todo', due_date: d(1), created_at: ago(0.2), updated_at: ago(0.2) }); demo.saveT('tasks', tk);
       demo.saveT('resignations', []); demo.saveT('task_comments', []);
       jset('crm.session', boss.id); me = pub(boss); return me;
     }

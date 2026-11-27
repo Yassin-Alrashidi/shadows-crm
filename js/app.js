@@ -230,7 +230,7 @@
     if (!inPanel) return;
     var stage = $('#stage'), id = ORDER[cur], old = [].slice.call(stage.querySelectorAll('.panel')).pop();
     var p = document.createElement('div'); p.className = 'panel'; p.innerHTML = '<div class="eyebrow"><span>0' + (cur + 1) + ' / ' + (document.documentElement.lang === 'ar' ? T(id) : ENNAME[id]) + '</span></div>' + V[id]();
-    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = '0' + (cur + 1);
+    var keep = old && old.dataset.id === id ? old.scrollTop : 0; p.dataset.id = id; p.dataset.n = (I18N.lang === 'ar' ? '٠' : '0') + (I18N.lang === 'ar' ? AD[cur + 1] : (cur + 1));
     [].slice.call(stage.querySelectorAll('.panel')).forEach(function (x) { if (x !== old) x.remove(); });
     stage.appendChild(p); p.scrollTop = keep;
     $('#addb').hidden = !QUICK[id]; bell();
@@ -244,7 +244,7 @@
   }
   function openPanel(anim) { if (!inPanel) { history.pushState({ p: 1 }, ''); } inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
   function showHub(noBack) {
-    if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); $('#addb').hidden = true;
+    if (!inPanel) return; inPanel = false; document.body.classList.remove('inpanel'); setTimeout(function () { owlXf(intro.step, false); }, 0); $('#addb').hidden = true;
     var stage = $('#stage'); [].slice.call(stage.querySelectorAll('.panel')).forEach(function (o) { if (o.animate) { o.style.pointerEvents = 'none'; o.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 240, fill: 'forwards' }).onfinish = function () { o.remove(); }; } else o.remove(); });
     if (dial) dial.set(cur);
   }
@@ -253,6 +253,36 @@
     if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(i); return; }
     if (i === cur) return; var d = dir || (i > cur ? 1 : -1); if (document.documentElement.dir === 'rtl') d = -d; cur = i; render(d); if (dial) dial.set(i);
   }
+
+  /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
+  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 1564, FACE = [782, 190], EYE = [684, 190], EYERING = 110;
+  function arDig(root) {
+    if (I18N.lang !== 'ar' || !root) return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
+    while ((n = w.nextNode())) { var v = n.nodeValue; if (/[0-9]/.test(v) && v.indexOf('@') < 0 && !/^[\s+\d()-]{7,}$/.test(v) && !(n.parentNode.closest && n.parentNode.closest('script,style,textarea,input'))) list.push(n); }
+    list.forEach(function (t) { t.nodeValue = t.nodeValue.replace(/[0-9]/g, function (d) { return AD[d]; }); });
+  }
+  new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === 'characterData') arDig(m.target.parentNode); else m.addedNodes.forEach(function (x) { if (x.nodeType === 1) arDig(x); else if (x.nodeType === 3) arDig(x.parentNode); }); }); }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  function owlXf(step, anim) {
+    var img = $('#owl'), d = $('#dial').getBoundingClientRect(); if (!d.width) return;
+    var cx = d.left + d.width / 2, cy = d.top + d.height / 2, S0 = Math.min(innerWidth * .98 / OW, innerHeight * .8 / 495), Sf = $('#dial').offsetWidth * .62 / EYERING;
+    var t = step / intro.N, S = S0 * Math.pow(Sf / S0, t), e = Math.pow(t, 1.6), px = FACE[0] + (EYE[0] - FACE[0]) * e, py = FACE[1] + (EYE[1] - FACE[1]) * e;
+    img.style.transition = anim ? 'transform 1.2s cubic-bezier(.65,0,.2,1)' : 'none';
+    img.style.transform = 'translate(' + (cx - px * S).toFixed(1) + 'px,' + (cy - py * S).toFixed(1) + 'px) scale(' + S.toFixed(4) + ')';
+  }
+  function introHint() {
+    var s = intro.step, dots = ''; for (var i = 0; i < intro.N; i++) dots += '<i' + (i < s ? ' class="on"' : '') + '></i>';
+    $('#introhint').innerHTML = '<span>' + T('intro.tap') + '</span><div class="dots">' + dots + '</div>';
+    $('#introbrand').style.opacity = s === 0 ? 1 : 0;
+  }
+  function startIntro() {
+    intro.step = 0; document.body.classList.add('intro'); owlXf(0, false); introHint();
+  }
+  $('#intro').onclick = function () {
+    if (intro.step >= intro.N) return; intro.step++; owlXf(intro.step, true); introHint();
+    if (intro.step >= intro.N) setTimeout(function () { document.body.classList.remove('intro'); }, 900);
+  };
+  window.addEventListener('resize', function () { if (!inPanel && me) owlXf(intro.step, false); });
+
   /* menu */
   function buildMenu() {
     $('#menulist').innerHTML = '<button class="menuitem hub" data-mi="hub"><span class="mn">00</span><span class="mi">' + T('lens') + '</span></button>' + ORDER.map(function (id, i) { return '<button class="menuitem' + (inPanel && cur === i ? ' on' : '') + '" data-mi="' + i + '"><span class="mn">0' + (i + 1) + '</span><span class="mi">' + T(id) + '</span></button>'; }).join('');
@@ -408,7 +438,7 @@
   };
   if (Store.mode === 'demo') $('#demobtn').hidden = false;
   $('#demobtn').onclick = async function () { me = await Store.demoSeed(); enter(); };
-  async function logout() { await Store.signOut(); me = null; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = ''; $('#app').hidden = true; $('#auth').hidden = false; chrome(); }
+  async function logout() { document.body.classList.remove('intro'); await Store.signOut(); me = null; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = ''; $('#app').hidden = true; $('#auth').hidden = false; chrome(); }
 
   async function enter() {
     $('#auth').hidden = true; $('#app').hidden = false; cur = 0; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = '';
@@ -424,7 +454,7 @@
         else { D.notifications = rows; bell(); }
       }).catch(function () {});
     }, 20000);
-    $('#dialhint').textContent = T('dial.hint'); dial.set(0); buildMenu(); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
+    $('#dialhint').textContent = T('dial.hint'); dial.set(0); buildMenu(); startIntro(); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
   }
 
   /* ---------- boot ---------- */
