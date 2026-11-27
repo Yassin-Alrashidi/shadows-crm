@@ -304,3 +304,9 @@ html[lang=ar] .item .t,html[lang=ar] .kpi b{font-family:'Cairo',sans-serif!impor
 #hubbg #owl{filter:none!important;-webkit-mask-image:none!important;mask-image:none!important;mix-blend-mode:normal!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;contain:strict;image-rendering:auto}
 body.intro #dial,body.intro #dial.press{filter:none!important;transition:transform .9s cubic-bezier(.3,.7,.2,1)!important;will-change:transform}
 body.intro #hubbg{will-change:auto}
+/* v20 perf: smaller owl, nothing else moving during intro */
+#hubbg #owl{width:2064px;height:1460px}
+body.intro #hubbg:after,body.intro #hubbg i,body.intro #introbrand,body.intro #introhint{animation:none!important}
+body.intro #hubbg:after{display:none}
+body.intro #introhint{transition:none}
+body.intro *{text-shadow:none!important;box-shadow:none!important}
