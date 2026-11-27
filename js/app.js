@@ -255,7 +255,7 @@
   }
 
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
-  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 1564, FACE = [782, 190], EYE = [684, 190], EYERING = 110;
+  var AD = '٠١٢٣٤٥٦٧٨٩', intro = { step: 4, N: 4 }, OW = 4692, FACE = [2346, 570], EYE = [2052, 570], EYERING = 330;
   function arDig(root) {
     if (I18N.lang !== 'ar' || !root) return; var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
     while ((n = w.nextNode())) { var v = n.nodeValue; if (/[0-9]/.test(v) && v.indexOf('@') < 0 && !/^[\s+\d()-]{7,}$/.test(v) && !(n.parentNode.closest && n.parentNode.closest('script,style,textarea,input'))) list.push(n); }
@@ -264,7 +264,7 @@
   new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === 'characterData') arDig(m.target.parentNode); else m.addedNodes.forEach(function (x) { if (x.nodeType === 1) arDig(x); else if (x.nodeType === 3) arDig(x.parentNode); }); }); }).observe(document.body, { childList: true, subtree: true, characterData: true });
   function owlXf(step, anim) {
     var img = $('#owl'), d = $('#dial').getBoundingClientRect(); if (!d.width) return;
-    var cx = d.left + d.width / 2, cy = d.top + d.height / 2, S0 = Math.min(innerWidth * .98 / OW, innerHeight * .8 / 495), Sf = $('#dial').offsetWidth * .62 / EYERING;
+    var cx = d.left + d.width / 2, cy = d.top + d.height / 2, S0 = Math.min(innerWidth * .98 / OW, innerHeight * .8 / 1485), Sf = $('#dial').offsetWidth * .5 / EYERING;
     var t = step / intro.N, S = S0 * Math.pow(Sf / S0, t), e = Math.pow(t, 1.6), px = FACE[0] + (EYE[0] - FACE[0]) * e, py = FACE[1] + (EYE[1] - FACE[1]) * e;
     img.style.transition = anim ? 'transform 1.2s cubic-bezier(.65,0,.2,1)' : 'none';
     img.style.transform = 'translate(' + (cx - px * S).toFixed(1) + 'px,' + (cy - py * S).toFixed(1) + 'px) scale(' + S.toFixed(4) + ')';
