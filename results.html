@@ -25,13 +25,13 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}td,th{p
 <p>بيعمل مفتاحين في متصفحك. المفتاح العام بيتحفظ في الفورم، والخاص بينزل ملف عندك. احتفظ به، من غيره مفيش حد يقدر يقرأ الباسوردات، ولا أنا.</p>
 <button class="b g" id="gen">عمل المفاتيح</button> <button class="b" id="cp" hidden>نسخ المفتاح</button>
 </main>
-<script src="js/join-config.js?v=37"></script>
+<script src="js/join-config.js?v=38"></script>
 <script>
 var C=window.JOIN_CONFIG||{},$=function(i){return document.getElementById(i)},rows=[];
 var base=(C.supabaseUrl||'').replace(/\/$/,''),H={'apikey':C.supabaseKey,'Authorization':'Bearer '+C.supabaseKey,'Content-Type':'application/json'};
 function b64(b){return btoa(String.fromCharCode.apply(null,new Uint8Array(b)))}
 function unb(s){return Uint8Array.from(atob(s.replace(/\s/g,'')),function(c){return c.charCodeAt(0)})}
-function rpc(n,a){return fetch(base+'/rest/v1/rpc/'+n,{method:'POST',headers:H,body:JSON.stringify(a)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error('denied');return j})})}
+function rpc(n,a){return fetch(base+'/rest/v1/rpc/'+n,{method:'POST',headers:H,body:JSON.stringify(a)}).catch(function(){throw new Error('NET: no connection to Supabase')}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j&&j.message==='denied')?'DENIED: wrong secret':'DB '+r.status+': '+((j&&j.message)||''));return j})})}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 $('pf').onchange=function(){var f=this.files[0];if(f)f.text().then(function(t){$('priv').value=t.trim()})};
 $('gen').onclick=async function(){$('err').textContent='';
@@ -41,7 +41,7 @@ $('gen').onclick=async function(){$('err').textContent='';
     await rpc('join_set_pubkey',{secret:s,k:pub});
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([pri],{type:'text/plain'}));a.download='shadows-private-key.txt';a.click();
     $('priv').value=pri;$('priv').style.height='150px';$('priv').select();$('cp').hidden=false;$('err').textContent='تم. المفتاح الخاص ظاهر في المربع اللي فوق. اضغط "نسخ المفتاح" واحفظه في Notes فوراً. لو الملف نزل كويس، احفظه برضو.';
-  }catch(e){$('err').textContent='اكتب الـ secret الأول، أو تأكد إن الإعداد اتعمل في Supabase.'}};
+  }catch(e){$('err').textContent=(e&&e.message?e.message:'step '+e)+' | secret length '+($('sec').value.length)+' | v38'}};
 $('cp').onclick=function(){var t=$('priv');t.select();try{navigator.clipboard.writeText(t.value).then(function(){$('err').textContent='اتنسخ. الصقه في Notes واحفظه.'},function(){document.execCommand('copy');$('err').textContent='اتنسخ. الصقه في Notes واحفظه.'})}catch(e){document.execCommand('copy');$('err').textContent='اتنسخ. الصقه في Notes واحفظه.'}};
 $('load').onclick=async function(){$('err').textContent='';$('out').innerHTML='';
   try{var raw=await rpc('join_export',{secret:$('sec').value});
