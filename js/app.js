@@ -9,7 +9,7 @@
   var DIALORD = ['expenses', 'assets', 'resign', 'me', 'home', 'tasks', 'attend', 'leaves', 'clients'];
   function DI(oi) { return DIALORD.indexOf(ORDER[oi]); }
   var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [], client_members: [] };
-  var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '', view: 'board' };
+  var cur = 0, dial = null, scope = 'mine', filters = { act: 'all', tasks: 'all', leaves: 'all', clients: 'all', q: '', view: 'board' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
 
@@ -223,7 +223,7 @@
       '<div class="kpi"><b>' + left + '</b><span>' + T('k.balance') + ' (' + T('days') + ')</span></div></div>';
     var ev = [];
     D.tasks.forEach(function (t) { if (isMgr() || t.assigned_to === me.id || t.created_by === me.id) ev.push({ at: t.created_at, p: 'tasks', txt: t.title, who: t.assigned_to || t.created_by, st: t.status, k: 'st.' }); });
-    D.leaves.forEach(function (l) { if (isMgr() || l.user_id === me.id) ev.push({ at: l.created_at, p: 'leaves', txt: T('lt.' + l.type) + ' · ' + l.days + ' ' + T('dayn'), who: l.user_id, st: l.status, k: 'ls.' }); });
+    D.leaves.forEach(function (l) { if (isMgr() || l.user_id === me.id) ev.push({ at: l.created_at, p: 'leaves', txt: T('lt.' + l.type) + ' · ' + l.days + ' ' + (I18N.lang === 'ar' ? T('dayn') : (Number(l.days) === 1 ? 'day' : 'days')), who: l.user_id, st: l.status, k: 'ls.' }); });
     D.resignations.forEach(function (r) { ev.push({ at: r.created_at, p: 'resign', txt: T('resign'), who: r.user_id, st: r.status, k: 'rs.' }); });
     ev.sort(function (a, b) { return (b.at || '').localeCompare(a.at || ''); });
     var att = D.tasks.filter(function (t) { return (isLate(t) || isSoon(t)) && (isMgr() || t.assigned_to === me.id || (t.team && !acked(t, me.id))); }).sort(function (x, y) { return x.due_date.localeCompare(y.due_date); }).slice(0, 5);
@@ -231,6 +231,9 @@
     if (isMgr()) { var ov = D.invoices.filter(function (v) { return v.status !== 'paid' && v.due_date && v.due_date < ymd(new Date()); }); if (ov.length) h += '<button class="item late" data-client="' + ov[0].client_id + '" style="margin-top:12px"><div class="t">' + L('Unpaid and overdue', 'فواتير متأخرة') + ': ' + money(ov.reduce(function (s, v) { return s + Number(v.amount || 0); }, 0)) + '</div><div class="m"><span>' + ov.length + ' ' + L('invoices', 'فواتير') + ' · ' + esc(clientName(ov[0].client_id)) + '</span></div></button>'; }
     if (isMgr()) h += '<button class="item" data-act="report" style="margin-top:12px"><div class="t">' + T('report') + '</div><div class="m"><span>' + T('rep.line') + '</span></div></button>';
     h += '<h2>' + T('recent') + '</h2>';
+    var kinds = [['all', L('All', 'الكل')], ['tasks', L('Tasks', 'Tasks')], ['leaves', L('Leaves', 'الإجازات')], ['resign', L('Resignations', 'الاستقالات')]].filter(function (k) { return k[0] === 'all' || ev.some(function (e) { return e.p === k[0]; }); });
+    if (kinds.length > 2) h += '<div class="chips">' + kinds.map(function (k) { return '<button class="chip' + (filters.act === k[0] ? ' on' : '') + '" data-f="act:' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>';
+    if (filters.act !== 'all') ev = ev.filter(function (e) { return e.p === filters.act; });
     h += ev.length ? ev.slice(0, 8).map(function (e) { return '<button class="item" data-go="' + e.p + '"><div class="t">' + esc(e.txt) + '</div><div class="m">' + pill(e.st, T(e.k + e.st)) + '<span>' + esc(nameOf(e.who)) + '</span><span>' + I18N.ago(e.at) + '</span></div></button>'; }).join('') : EMPTY();
     return h;
   };
@@ -283,7 +286,7 @@
     var rows = mineOrAll(D.leaves).filter(function (l) { return filters.leaves === 'all' || l.status === filters.leaves; });
     h += '<h2>' + T('cal.h') + '</h2>' + leaveCal() + '<h2>' + T('leaves') + '</h2>';
     h += scopeBar() + chipBar('leaves', ['pending', 'approved', 'rejected', 'cancelled'], 'ls.');
-    h += rows.length ? rows.map(function (l) { return '<button class="item" data-leave="' + l.id + '"><div class="t">' + T('lt.' + l.type) + ' · ' + l.days + ' ' + T('dayn') + '</div><div class="m">' + pill(l.status, T('ls.' + l.status)) + '<span dir="ltr">' + I18N.date(l.start_date) + ' → ' + I18N.date(l.end_date) + '</span>' + (scope === 'all' && isMgr() ? '<span>' + esc(nameOf(l.user_id)) + '</span>' : '') + '</div></button>'; }).join('') : EMPTY();
+    h += rows.length ? rows.map(function (l) { return '<button class="item" data-leave="' + l.id + '"><div class="t">' + T('lt.' + l.type) + ' · ' + l.days + ' ' + (I18N.lang === 'ar' ? T('dayn') : (Number(l.days) === 1 ? 'day' : 'days')) + '</div><div class="m">' + pill(l.status, T('ls.' + l.status)) + '<span dir="ltr">' + I18N.date(l.start_date) + ' → ' + I18N.date(l.end_date) + '</span>' + (scope === 'all' && isMgr() ? '<span>' + esc(nameOf(l.user_id)) + '</span>' : '') + '</div></button>'; }).join('') : EMPTY();
     return h;
   };
   V.clients = function () {
@@ -536,7 +539,7 @@
   }
   function leaveDetail(id) {
     var l = D.leaves.filter(function (x) { return x.id === id; })[0]; if (!l) return;
-    openSheet('<h2>' + T('lt.' + l.type) + ' · ' + l.days + ' ' + T('dayn') + '</h2><div style="margin-bottom:8px">' + pill(l.status, T('ls.' + l.status)) + '</div><p style="color:var(--ash)">' + esc(nameOf(l.user_id)) + '</p><p dir="ltr" style="text-align:start">' + I18N.date(l.start_date) + ' → ' + I18N.date(l.end_date) + '</p><p>' + esc(l.reason) + '</p>' + (l.decision_note ? '<p class="cm">' + esc(l.decision_note) + '</p>' : '') + decideButtons('leaves', id, l, 'approve', 'reject'));
+    openSheet('<h2>' + T('lt.' + l.type) + ' · ' + l.days + ' ' + (I18N.lang === 'ar' ? T('dayn') : (Number(l.days) === 1 ? 'day' : 'days')) + '</h2><div style="margin-bottom:8px">' + pill(l.status, T('ls.' + l.status)) + '</div><p style="color:var(--ash)">' + esc(nameOf(l.user_id)) + '</p><p dir="ltr" style="text-align:start">' + I18N.date(l.start_date) + ' → ' + I18N.date(l.end_date) + '</p><p>' + esc(l.reason) + '</p>' + (l.decision_note ? '<p class="cm">' + esc(l.decision_note) + '</p>' : '') + decideButtons('leaves', id, l, 'approve', 'reject'));
     wireDecide('leaves', id, 'approved', 'rejected', 'cancelled');
   }
   function newResign() {
