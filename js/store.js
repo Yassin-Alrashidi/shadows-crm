@@ -6,7 +6,7 @@
   var CFG = window.CRM_CONFIG || {};
   var live = !!(CFG.supabaseUrl && CFG.supabaseKey);
   var LS = window.localStorage;
-  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers'];
+  var TABLES = ['tasks', 'task_comments', 'leaves', 'resignations', 'clients', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries'];
   var me = null; // current profile {id,email,name,role}
 
   function uid() { return (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(16).slice(2)); }
@@ -180,7 +180,7 @@
     },
     insert: async function (t, row) {
       row = Object.assign({}, row);
-      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else if (['notifications', 'decisions', 'stars', 'broadcasts', 'client_members'].indexOf(t) < 0) row.user_id = me.id;
+      if (t === 'clients' || t === 'tasks') row.created_by = me.id; else if (['notifications', 'decisions', 'stars', 'broadcasts', 'client_members', 'retainers'].indexOf(t) < 0) row.user_id = me.id;
       if (live) return remote.insert(t, row);
       row.id = uid(); row.created_at = now(); if (t === 'tasks') row.updated_at = row.created_at; if (t === 'attendance') { row.check_in = row.created_at; row.check_out = null; }
       var rows = demo.t(t); rows.push(row); demo.saveT(t, rows); return row;

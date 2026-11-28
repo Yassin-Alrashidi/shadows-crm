@@ -197,8 +197,8 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers') return []; throw e; }); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers' || n === 'time_entries') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
@@ -474,6 +474,31 @@
     var late = op.filter(isLate).length;
     return '<p class="sub">' + cl + ' ' + L(cl === 1 ? 'client' : 'clients', 'عملاء') + ' · ' + op.length + ' ' + L('open tasks', 'مهام مفتوحة') + (late ? ' · ' + late + ' ' + L('overdue', 'متأخرة') : '') + '</p>';
   }
+  /* ---------- time tracking ---------- */
+  function hm(sec) { sec = Math.max(0, Math.round(sec)); if (sec < 60) return sec + 's'; var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h + 'h ' + ('0' + m).slice(-2) + 'm'; }
+  function entSec(e) { return e.ended_at ? Number(e.seconds) || 0 : Math.max(0, (Date.now() - new Date(e.started_at).getTime()) / 1000); }
+  function myTimer() { return (D.time_entries || []).filter(function (e) { return e.user_id === me.id && !e.ended_at; })[0]; }
+  function timeBlock(t) {
+    var es = (D.time_entries || []).filter(function (e) { return e.task_id === t.id; });
+    var tot = es.reduce(function (s, e) { return s + entSec(e); }, 0), run = myTimer();
+    var mine = run && run.task_id === t.id;
+    return '<div class="tmrow"><div><small>' + L('Time on this task', 'الوقت على المهمة') + '</small><b class="tmv" ' + (mine ? 'data-tbase="' + (tot - entSec(run)) + '" data-tstart="' + new Date(run.started_at).getTime() + '"' : '') + '>' + hm(tot) + '</b></div><button type="button" class="btn ' + (mine ? '' : 'ghost') + '" data-tmr="' + t.id + '">' + (mine ? L('Stop', 'وقّف') : L('Start timer', 'ابدأ التايمر')) + '</button></div>';
+  }
+  function toggleTimer(t) {
+    var run = myTimer();
+    return act(async function () {
+      if (run) await Store.update('time_entries', run.id, { ended_at: new Date().toISOString(), seconds: Math.round(entSec(run)) });
+      if (!run || run.task_id !== t.id) await Store.insert('time_entries', { task_id: t.id, client_id: t.client_id || null, started_at: new Date().toISOString(), ended_at: null, seconds: 0 });
+    });
+  }
+  function clientTimeBlock(c) {
+    var mm = ymNow(), es = (D.time_entries || []).filter(function (e) { return e.client_id === c.id && (e.started_at || '').slice(0, 7) === mm; });
+    if (!es.length) return '';
+    var by = {}; es.forEach(function (e) { by[e.user_id] = (by[e.user_id] || 0) + entSec(e); });
+    var tot = es.reduce(function (s, e) { return s + entSec(e); }, 0);
+    return '<h2>' + L('Time this month', 'وقت الشهر') + ' · ' + hm(tot) + '</h2>' + Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }).map(function (u) { return '<div class="payrow"><div><div class="t">' + esc(nameOf(u)) + '</div></div><span class="paytag">' + hm(by[u]) + '</span></div>'; }).join('');
+  }
+  setInterval(function () { [].forEach.call(document.querySelectorAll('[data-tstart]'), function (el) { el.textContent = hm(Number(el.dataset.tbase) + (Date.now() - Number(el.dataset.tstart)) / 1000); }); }, 1000);
   /* ---------- monthly scope: promised vs delivered ---------- */
   function ymNow() { return ymd(new Date()).slice(0, 7); }
   function scopeBlock(c) {
@@ -482,7 +507,7 @@
     var mgr = isMgr();
     var h = '<h2>' + L('Monthly scope', 'سكوب الشهر') + '</h2>';
     if (!cur.length && !prev.length && !mgr) return h + '<div class="calnone">' + L('No scope set yet.', 'لسه مفيش سكوب.') + '</div>';
-    h += cur.map(function (r) { var pr = Number(r.promised) || 0, dl = Number(r.delivered) || 0, pc = pr ? Math.min(100, Math.round(dl * 100 / pr)) : 0; return '<div class="scrow' + (dl >= pr && pr ? ' full' : '') + '"><div class="sct"><b>' + esc(r.label) + '</b><span>' + dl + ' / ' + pr + '</span></div><i class="scbar"><u style="width:' + pc + '%"></u></i>' + (mgr || membersOf(c.id).some(function (p) { return p.id === me.id; }) ? '<div class="scbt"><button type="button" class="chip" data-scd="' + r.id + ':-1">−1</button><button type="button" class="chip" data-scd="' + r.id + ':1">+1</button>' + (mgr ? '<button type="button" class="chip" data-scx="' + r.id + '">×</button>' : '') + '</div>' : '') + '</div>'; }).join('');
+    h += cur.map(function (r) { var pr = Number(r.promised) || 0, dl = Number(r.delivered) || 0, pc = pr ? Math.min(100, Math.round(dl * 100 / pr)) : 0; return '<div class="scrow' + (dl >= pr && pr ? ' full' : '') + '"><div class="sct"><b>' + esc(r.label) + '</b><span class="scn">' + dl + ' / ' + pr + '</span>' + (mgr || membersOf(c.id).some(function (p) { return p.id === me.id; }) ? '<div class="scbt"><button type="button" class="chip" data-scd="' + r.id + ':-1">−1</button><button type="button" class="chip" data-scd="' + r.id + ':1">+1</button>' + (mgr ? '<button type="button" class="chip" data-scx="' + r.id + '">×</button>' : '') + '</div>' : '') + '</div><i class="scbar"><u style="width:' + pc + '%"></u></i></div>'; }).join('');
     if (!cur.length && prev.length && mgr) h += '<button class="btn ghost" id="scnew">' + L('Start this month from last month', 'ابدأ الشهر من الشهر اللي فات') + '</button>';
     if (!cur.length && !prev.length) h += '<div class="calnone">' + L('No scope set yet.', 'لسه مفيش سكوب.') + '</div>';
     if (mgr) h += '<div class="two" style="margin-top:8px"><input id="fsl" placeholder="' + L('e.g. Instagram posts', 'مثلا: بوستات انستجرام') + '"><input id="fsp" type="number" inputmode="numeric" min="1" placeholder="' + L('Per month', 'في الشهر') + '"></div><button class="btn" id="scadd" style="margin-top:8px">' + L('Add to scope', 'ضيف للسكوب') + '</button>';
@@ -538,8 +563,10 @@
     openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (t.client_id ? '<button class="pill" data-client="' + t.client_id + '">' + esc(clientName(t.client_id)) + '</button>' : '') + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (isLate(t) ? pill('urgent', T('overdue')) : '') + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + ' · ' + (t.team ? T('whole') : t.assigned_to ? T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' + team + checklistBlock(t, canSt) + linksBlock(t, canSt) +
       '<div id="vlist"></div>' + voiceBox('vb2') +
       (canSt ? '<label class="fld"><span>' + T('f.status') + '</span><select id="fs">' + options(['todo', 'in_progress', 'done'], 'st.', t.status) + '</select></label>' : '') +
+      (canSt ? timeBlock(t) : '') +
       '<h2>' + T('comments') + '</h2>' + (cm.length ? cm.map(function (c) { return '<div class="cm"><small>' + esc(nameOf(c.user_id)) + ' · ' + I18N.ago(c.created_at) + '</small><div>' + esc(c.body) + '</div></div>'; }).join('') : '<div class="empty" style="padding:8px">' + T('none') + '</div>') +
       '<div class="row" style="margin-top:10px"><input id="fcm" placeholder="' + T('comment.ph') + '"><button class="btn" id="cmok">' + T('send') + '</button></div>' + (isMgr() ? '<button class="btn ghost danger" id="tdel">' + T('delete') + '</button>' : ''));
+    var tb = document.querySelector('#sheetin [data-tmr]'); if (tb) tb.onclick = function () { toggleTimer(t).then(function () { taskDetail(id); }); };
     var others = function () { return [t.created_by, t.assigned_to].concat(t.team ? allIds() : []); };
     bindTaskExtras(t, id, canSt, function (keep) { var y = $('#sheet').scrollTop; taskDetail(id); if (keep) $('#sheet').scrollTop = y; });
     Store.where('voice_notes', 'task_id', id).then(function (rows) {
@@ -611,7 +638,7 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      teamBlock(c) + scopeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + scopeBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };

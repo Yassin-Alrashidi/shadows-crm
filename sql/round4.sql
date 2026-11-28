@@ -58,3 +58,24 @@ create policy "ret read" on public.retainers for select to authenticated using (
 create policy "ret write" on public.retainers for insert to authenticated with check (public.is_manager());
 create policy "ret update" on public.retainers for update to authenticated using (true) with check (true);
 create policy "ret delete" on public.retainers for delete to authenticated using (public.is_manager());
+
+-- v96: time tracking
+create table if not exists public.time_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id),
+  task_id uuid references public.tasks(id) on delete cascade,
+  client_id uuid references public.clients(id) on delete set null,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  seconds int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.time_entries enable row level security;
+drop policy if exists "te read" on public.time_entries;
+drop policy if exists "te write" on public.time_entries;
+drop policy if exists "te update" on public.time_entries;
+drop policy if exists "te delete" on public.time_entries;
+create policy "te read" on public.time_entries for select to authenticated using (user_id = auth.uid() or public.is_manager());
+create policy "te write" on public.time_entries for insert to authenticated with check (user_id = auth.uid());
+create policy "te update" on public.time_entries for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "te delete" on public.time_entries for delete to authenticated using (user_id = auth.uid() or public.is_manager());
