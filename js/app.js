@@ -195,8 +195,8 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
@@ -454,9 +454,15 @@
     return '<h2>' + L('Links', 'الروابط') + '</h2>' + (lk.length ? lk.map(function (x, i) { return '<div class="lkrow"><a href="' + esc(x.u) + '" target="_blank" rel="noopener"><b>' + esc(x.n || x.u) + '</b><small dir="ltr">' + esc(x.u.replace(/^https?:\/\//, '').slice(0, 42)) + '</small></a>' + (can ? '<button type="button" class="lkdel" data-lkdel="' + i + '" aria-label="' + T('delete') + '">×</button>' : '') + '</div>'; }).join('') : '<div class="calnone">' + L('No links yet.', 'مفيش روابط لسه.') + '</div>') +
       (can ? '<div class="two" style="margin-top:8px"><input id="fln" placeholder="' + L('Name', 'الاسم') + '"><input id="flu" dir="ltr" placeholder="https://"></div><button class="btn" id="lkadd" style="margin-top:8px">' + L('Add link', 'ضيف رابط') + '</button>' : '');
   }
-  function bindTaskExtras(t, id, can, reopen) {
+  /* ---------- notes log on a client ---------- */
+  function notesBlock(c) {
+    var ns = D.client_notes.filter(function (n) { return n.client_id === c.id; }).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    return '<h2>' + L('Notes', 'الملاحظات') + (ns.length ? ' · ' + ns.length : '') + '</h2><div class="row"><input id="fcn" placeholder="' + L('Call, meeting, decision…', 'مكالمة، اجتماع، قرار…') + '"><button class="btn" id="cnadd">+</button></div>' +
+      (ns.length ? ns.slice(0, 30).map(function (n) { return '<div class="cnrow"><div class="cnh"><b>' + esc(nameOf(n.user_id)) + '</b><small>' + I18N.ago(n.created_at) + '</small>' + (isMgr() || n.user_id === me.id ? '<button type="button" class="lkdel" data-cndel="' + n.id + '" aria-label="' + T('delete') + '">×</button>' : '') + '</div><div>' + esc(n.body) + '</div></div>'; }).join('') : '<div class="calnone">' + L('No notes yet.', 'مفيش ملاحظات لسه.') + '</div>');
+  }
+  function bindTaskExtras(t, id, can, reopen, table) {
     if (!can) return;
-    var save = function (patch) { return act(function () { return Store.update('tasks', id, patch); }); };
+    var save = function (patch) { return act(function () { return Store.update(table || 'tasks', id, patch); }); };
     [].slice.call(document.querySelectorAll('#sheetin [data-ck]')).forEach(function (b) {
       b.onclick = function () { var i = +b.dataset.ck, ck = (t.checklist || []).map(function (x) { return { t: x.t, d: x.d }; }); ck[i].d = !ck[i].d; t.checklist = ck; b.classList.toggle('on', ck[i].d); save({ checklist: ck }).then(function () { reopen(true); }); };
     });
@@ -546,9 +552,13 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
+      linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
+    bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    var na = $('#cnadd'); if (na) { var gon = function () { var v = f('#fcn').trim(); if (!v) return; act(function () { return Store.insert('client_notes', { client_id: id, body: v.slice(0, 600) }); }).then(function () { var y = $('#sheet').scrollTop; clientDetail(id); $('#sheet').scrollTop = y; }); }; na.onclick = gon; $('#fcn').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gon(); } }; }
+    [].slice.call(document.querySelectorAll('#sheetin [data-cndel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('client_notes', b.dataset.cndel); }).then(function () { clientDetail(id); }); }; });
   }
 
 

@@ -324,3 +324,8 @@ html:not([data-theme=dark]) body{background:#fff!important}
 .dlrow .dlbar{flex:none;width:3px;border-radius:3px;background:rgba(128,128,128,.35)}
 .dl.late .dlbar,.dl.today .dlbar{background:#E11827}
 .dlrow>div{min-width:0}
+/* v84: client notes log */
+.cnrow{padding:12px 0}
+.cnh{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.cnh small{color:var(--ash);flex:1}
+.cnh .lkdel{width:28px;height:28px;font-size:17px}
