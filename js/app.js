@@ -437,6 +437,25 @@
   }
   function openMenu() { buildMenu(); $('#menu').classList.add('on'); $('#menubg').classList.add('on'); }
   function closeMenu() { $('#menu').classList.remove('on'); $('#menubg').classList.remove('on'); }
+  /* ---------- internal weekly report per client ---------- */
+  function clientWeekly(c) {
+    var since = new Date(Date.now() - 7 * 864e5).toISOString(), sd = since.slice(0, 10), mm = ymNow();
+    var done = D.tasks.filter(function (t) { return t.client_id === c.id && t.status === 'done' && (t.updated_at || t.created_at) >= since; });
+    var open = D.tasks.filter(function (t) { return t.client_id === c.id && t.status !== 'done'; }), late = open.filter(isLate).length;
+    var secs = (D.time_entries || []).filter(function (e) { return e.client_id === c.id && (e.started_at || '') >= since; }).reduce(function (a, e) { return a + entSec(e); }, 0);
+    var posted = (D.content_items || []).filter(function (x) { return x.client_id === c.id && x.status === 'posted'; });
+    var next = (D.content_items || []).filter(function (x) { return x.client_id === c.id && x.status !== 'posted'; }).length;
+    var sc = (D.retainers || []).filter(function (r) { return r.client_id === c.id && r.month === mm; });
+    var meets = (D.meeting_notes || []).filter(function (x) { return x.client_id === c.id && String(x.meeting_date || x.created_at || '') >= sd; });
+    var scTxt = sc.map(function (r) { return r.label + ' ' + (Number(r.delivered) || 0) + '/' + (Number(r.promised) || 0); });
+    var text = c.name + ' · ' + L('Weekly report (internal)', 'تقرير الأسبوع (داخلي)') + '\n' + L('Tasks done', 'مهام خلصت') + ': ' + done.length + (done.length ? ' (' + done.map(function (t) { return t.title; }).join(', ') + ')' : '') + '\n' + L('Open', 'مفتوحة') + ': ' + open.length + ' · ' + L('overdue', 'متأخرة') + ': ' + late + '\n' + L('Time', 'الوقت') + ': ' + hm(secs) + '\n' + L('Posted', 'اتنشر') + ': ' + posted.length + ' · ' + L('in pipeline', 'في الطريق') + ': ' + next + (scTxt.length ? '\n' + L('Scope', 'السكوب') + ': ' + scTxt.join(', ') : '') + (meets.length ? '\n' + L('Meetings', 'اجتماعات') + ': ' + meets.length : '');
+    var row = function (t, v) { return '<div class="payrow"><div><div class="t">' + t + '</div></div><span class="paytag">' + v + '</span></div>'; };
+    openSheet('<div class="rp"><small>' + L('INTERNAL ONLY', 'داخلي فقط') + '</small><h2>' + esc(c.name) + '</h2><p class="sub">' + L('Weekly report, last 7 days', 'تقرير الأسبوع، آخر 7 أيام') + '</p></div><div class="two3 rpk"><div class="kpi"><b>' + done.length + '</b><span>' + L('Done', 'خلصت') + '</span></div><div class="kpi' + (late ? ' red' : '') + '"><b>' + late + '</b><span>' + L('Overdue', 'متأخرة') + '</span></div><div class="kpi"><b>' + hm(secs) + '</b><span>' + L('Time', 'الوقت') + '</span></div></div>' +
+      (done.length ? done.slice(0, 8).map(function (t) { return '<div class="item" style="cursor:default"><div class="t">' + esc(t.title) + '</div></div>'; }).join('') : '<div class="calnone">' + L('No tasks finished this week.', 'مفيش مهام خلصت الأسبوع ده.') + '</div>') +
+      row(L('Content posted', 'محتوى اتنشر'), posted.length) + row(L('Content in pipeline', 'محتوى في الطريق'), next) + row(L('Meetings', 'اجتماعات'), meets.length) + sc.map(function (r) { return row(esc(r.label), (Number(r.delivered) || 0) + ' / ' + (Number(r.promised) || 0)); }).join('') +
+      '<button class="btn big" id="cwcopy" style="margin-top:14px">' + T('rep.copy') + '</button>');
+    $('#cwcopy').onclick = function () { try { navigator.clipboard.writeText(text).then(function () { toast(T('rep.copied')); }); } catch (e) {} };
+  }
   /* ---------- meeting notes ---------- */
   function meetBlock(c) {
     var rows = (D.meeting_notes || []).filter(function (x) { return x.client_id === c.id; }).sort(function (a, b) { return String(b.meeting_date || b.created_at || '').localeCompare(String(a.meeting_date || a.created_at || '')); });
@@ -676,11 +695,12 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      teamBlock(c) + scopeBlock(c) + contentBlock(c) + meetBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + scopeBlock(c) + contentBlock(c) + meetBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) + '<button class="btn big" id="cwrep" style="margin-top:16px">' + L('Weekly report', 'تقرير الأسبوع') + '</button>' +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
     bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    if ($('#cwrep')) $('#cwrep').onclick = function () { clientWeekly(c); };
     bindMeet(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindContent(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindScope(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
