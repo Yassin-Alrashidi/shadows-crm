@@ -300,3 +300,5 @@ html:not([data-theme=dark]) body{background:#fff!important}
   .grid .kpi:first-child{grid-column:1/-1}
   .board{grid-template-columns:repeat(3,1fr)!important}
 }
+/* v77: no small page icons inside the dome. The row above the dome names the current page and its neighbours. Ticks and the notch stay. */
+#dial .wheel .wi{opacity:0!important;pointer-events:none!important}
