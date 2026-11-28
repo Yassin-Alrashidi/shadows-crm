@@ -122,3 +122,35 @@ create policy "mn read" on public.meeting_notes for select to authenticated usin
 create policy "mn write" on public.meeting_notes for insert to authenticated with check (user_id = auth.uid());
 create policy "mn update" on public.meeting_notes for update to authenticated using (true) with check (true);
 create policy "mn delete" on public.meeting_notes for delete to authenticated using (user_id = auth.uid() or public.is_manager());
+
+-- ===== v102: sign-in lockout (5 wrong passwords) + admin alert. NOT RUN. =====
+-- Also in Supabase dashboard: Auth > Providers > Email > turn OFF "Allow new users to sign up" (accounts are created by admin only).
+create table if not exists public.login_attempts (
+  email text primary key, n int not null default 0, locked_until timestamptz, updated_at timestamptz default now()
+);
+alter table public.login_attempts enable row level security;   -- no policies: only the function below touches it
+
+create or replace function public.report_failed_login(p_email text) returns json
+language plpgsql security definer set search_path = public as $$
+declare r public.login_attempts; uid uuid;
+begin
+  p_email := lower(p_email);
+  insert into public.login_attempts(email, n) values (p_email, 1)
+    on conflict (email) do update set
+      n = case when public.login_attempts.locked_until is not null and public.login_attempts.locked_until <= now() then 1 else public.login_attempts.n + 1 end,
+      locked_until = case when public.login_attempts.locked_until <= now() then null else public.login_attempts.locked_until end,
+      updated_at = now()
+    returning * into r;
+  if r.n >= 5 and (r.locked_until is null) then
+    update public.login_attempts set locked_until = now() + interval '15 minutes' where email = p_email returning * into r;
+    select id into uid from public.profiles where lower(email) = p_email;
+    if uid is not null then   -- in-app alert to every admin; an edge function on this insert sends the e-mail
+      insert into public.notifications(user_id, kind, ref, subject, actor, read)
+        select id, 'login_locked', 'home', '', uid, false from public.profiles where role = 'admin';
+    end if;
+  end if;
+  return json_build_object('n', r.n, 'locked', r.locked_until is not null and r.locked_until > now());
+end $$;
+grant execute on function public.report_failed_login(text) to anon, authenticated;
+-- NOTE: the notifications insert policy needs actor = auth.uid(); this function is security definer so it bypasses it.
+-- The e-mail itself: a Database Webhook on notifications (kind = 'login_locked') -> Supabase Edge Function -> e-mail provider (needs an API key).

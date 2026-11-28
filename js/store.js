@@ -16,6 +16,23 @@
 
   /* ---------------- DEMO engine ---------------- */
   function SL(en, ar) { try { return localStorage.getItem('crm.lang') === 'ar' ? ar : en; } catch (e) { return en; } }
+  /* sign-in lockout: 5 wrong passwords on one account locks it for 15 minutes */
+  var MAX_TRIES = 5, LOCK_MIN = 15;
+  function lockGet(em) { return (jget('crm.locks', {}))[em] || { n: 0, until: 0 }; }
+  function lockPut(em, v) { var all = jget('crm.locks', {}); if (v) all[em] = v; else delete all[em]; jset('crm.locks', all); }
+  function lockLeft(L) { return L.until > Date.now() ? Math.ceil((L.until - Date.now()) / 60000) : 0; }
+  function lockClear(em) { lockPut(em, null); }
+  function lockFail(em) {
+    var L = lockGet(em); if (L.until && L.until <= Date.now()) L = { n: 0, until: 0 };
+    L.n++; var locked = L.n >= MAX_TRIES; if (locked) L.until = Date.now() + LOCK_MIN * 60000;
+    lockPut(em, L); return { n: L.n, locked: locked };
+  }
+  function lockAlert(em) {   // demo: in-app alert to every admin (live: see sql/round4.sql + edge function)
+    var users = demo.users(), who = users.filter(function (x) { return x.email === em; })[0]; if (!who) return;
+    var rows = demo.t('notifications');
+    users.filter(function (x) { return x.role === 'admin'; }).forEach(function (ad) { rows.unshift({ id: uid(), user_id: ad.id, kind: 'login_locked', ref: 'home', subject: '', actor: who.id, read: false, created_at: new Date().toISOString() }); });
+    demo.saveT('notifications', rows);
+  }
   var demo = {
     users: function () { return jget('crm.users', []); },
     saveUsers: function (u) { jset('crm.users', u); },
@@ -28,8 +45,15 @@
       users.push(u); demo.saveUsers(users); jset('crm.session', u.id); me = pub(u); return me;
     },
     signIn: function (o) {
-      var u = demo.users().filter(function (x) { return x.email === o.email.toLowerCase() && x.pw === o.password; })[0];
-      if (!u) throw new Error('bad');
+      var em = o.email.toLowerCase(), L = lockGet(em), left = lockLeft(L);
+      if (left > 0) throw new Error('locked:' + left);
+      var u = demo.users().filter(function (x) { return x.email === em && x.pw === o.password; })[0];
+      if (!u) {
+        var r = lockFail(em);
+        if (r.locked) { lockAlert(em); throw new Error('locked:' + Math.ceil(LOCK_MIN)); }
+        throw new Error('bad:' + (MAX_TRIES - r.n));
+      }
+      lockClear(em);
       jset('crm.session', u.id); me = pub(u); return me;
     },
     session: function () { var id = jget('crm.session', null); var u = demo.users().filter(function (x) { return x.id === id; })[0]; me = u ? pub(u) : null; return me; },
@@ -142,14 +166,21 @@
     return j;
   }
   var remote = {
-    signUp: async function (o) {
-      var j = await api('/auth/v1/signup', { method: 'POST', body: { email: o.email, password: o.password, data: { name: o.name } } });
-      if (!j.access_token) throw new Error('confirm');      // the project still asks for e-mail confirmation
-      setTok(j); return remote.session();
-    },
     signIn: async function (o) {
-      var j = await api('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: o.email, password: o.password } });
-      setTok(j); return remote.session();
+      var em = o.email.toLowerCase(), left = lockLeft(lockGet(em));
+      if (left > 0) throw new Error('locked:' + left);
+      var j;
+      try { j = await api('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: o.email, password: o.password } }); }
+      catch (x) {
+        if (x.status === 400 || x.status === 401 || /invalid/i.test(x.message)) {
+          var r = lockFail(em), srv = null;
+          try { srv = await api('/rest/v1/rpc/report_failed_login', { method: 'POST', body: { p_email: em } }); } catch (e2) {}
+          if (r.locked || (srv && srv.locked)) throw new Error('locked:' + LOCK_MIN);
+          throw new Error('bad:' + Math.max(0, MAX_TRIES - Math.max(r.n, (srv && srv.n) || 0)));
+        }
+        throw x;
+      }
+      lockClear(em); setTok(j); return remote.session();
     },
     session: async function () {
       if (!tok) { me = null; return null; }
@@ -168,7 +199,6 @@
   /* ---------------- public API ---------------- */
   var Store = {
     mode: live ? 'live' : 'demo',
-    signUp: async function (o) { return live ? remote.signUp(o) : demo.signUp(o); },
     signIn: async function (o) { return live ? remote.signIn(o) : demo.signIn(o); },
     session: async function () { return live ? remote.session() : demo.session(); },
     signOut: async function () { me = null; if (live) { try { await api('/auth/v1/logout', { method: 'POST' }); } catch (e) {} tok = null; LS.removeItem('crm.tok'); } else LS.removeItem('crm.session'); },

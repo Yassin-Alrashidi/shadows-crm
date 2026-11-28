@@ -805,22 +805,22 @@
   function toggleAttend() { var open = D.attendance.filter(function (r) { return r.user_id === me.id && !r.check_out; })[0]; act(function () { return open ? Store.update('attendance', open.id, { check_out: new Date().toISOString() }) : Store.insert('attendance', {}); }, open ? 'att.bye' : 'att.hi'); }
   function quickAdd() { var id = ORDER[cur]; if (id === 'tasks') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); else if (id === 'expenses') newExpense(); else if (id === 'assets') newAsset(); }
   function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); buildMenu(); if (dial) dial.set(DI(cur)); } }
-  function chrome() { applyText(); if (window.__theme) window.__theme(document.documentElement.getAttribute('data-theme') || 'light'); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
+  function chrome() { applyText(); if (window.__theme) window.__theme(document.documentElement.getAttribute('data-theme') || 'light'); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); $('#authgo').textContent = T('auth.go.in'); var d = $('#demobar'); $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
   function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crm.theme', t); } catch (e) {} [].forEach.call(document.querySelectorAll('meta[name=theme-color]'), function (m) { m.removeAttribute('media'); m.setAttribute('content', t === 'dark' ? '#0E0E10' : '#FFFFFF'); }); var b = $('#apptheme'); if (b) b.textContent = t === 'dark' ? (I18N.lang === 'ar' ? 'الوضع الفاتح' : 'Light mode') : (I18N.lang === 'ar' ? 'الوضع الليلي' : 'Dark mode'); }
   $('#apptheme').onclick = function () { theme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); };
   window.__theme = theme; theme(document.documentElement.getAttribute('data-theme') || 'light');
   $('#applang').onclick = toggleLang; $('#authlang').onclick = toggleLang;
 
   /* ---------- auth ---------- */
-  var authMode = 'in';
-  function setAuthMode(m) { authMode = m; [].forEach.call(document.querySelectorAll('#authseg button'), function (b) { b.classList.toggle('on', b.dataset.m === m); }); $('#fname').hidden = m !== 'up'; $('#authhint').hidden = m !== 'up'; $('#authgo').textContent = T(m === 'up' ? 'auth.go.up' : 'auth.go.in'); }
-  $('#authseg').onclick = function (e) { var b = e.target.closest('button'); if (b) { setAuthMode(b.dataset.m); $('#autherr').textContent = ''; } };
+  $('#authgo').textContent = T('auth.go.in');
   $('#authform').onsubmit = async function (e) {
     e.preventDefault(); var fm = e.target, em = fm.email.value.trim(), pw = fm.password.value, err = $('#autherr'); err.textContent = '';
     if (!em || !pw) { err.textContent = T('auth.fill'); return; }
-    if (authMode === 'up' && pw.length < 6) { err.textContent = T('auth.short'); return; }
-    try { me = authMode === 'up' ? await Store.signUp({ email: em, password: pw, name: fm.name.value.trim() }) : await Store.signIn({ email: em, password: pw }); if (!me) { err.textContent = T('auth.confirm'); return; } enter(); }
-    catch (x) { var m = String(x && x.message || x); err.textContent = /exist|registered/i.test(m) ? T('auth.exists') : /bad|invalid/i.test(m) ? T('auth.bad') : /confirm/i.test(m) ? T('auth.confirm') : /invit|database error/i.test(m) ? T('auth.notinvited') : T('auth.err'); }
+    try { me = await Store.signIn({ email: em, password: pw }); if (!me) { err.textContent = T('auth.confirm'); return; } enter(); }
+    catch (x) { var m = String(x && x.message || x), lk = /^locked:(\d+)/.exec(m);
+      if (lk) err.textContent = T('auth.locked').replace('{m}', lk[1]);
+      else if (/^bad:(\d+)/.test(m)) err.textContent = T('auth.bad') + ' ' + T('auth.left').replace('{n}', /^bad:(\d+)/.exec(m)[1]);
+      else err.textContent = /bad|invalid/i.test(m) ? T('auth.bad') : /confirm/i.test(m) ? T('auth.confirm') : /invit|database error/i.test(m) ? T('auth.notinvited') : T('auth.err'); }
   };
   if (Store.mode === 'demo') $('#demobtn').hidden = false;
   $('#demobtn').onclick = async function () { me = await Store.demoSeed(); enter(); };
