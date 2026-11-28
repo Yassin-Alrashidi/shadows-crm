@@ -335,10 +335,10 @@
         /* page turn: short and snappy, small travel. New page comes from its own side (right = forward, left = back), old one steps back. Transforms and opacity only. */
         var EASE = 'cubic-bezier(.2,.8,.2,1)', DUR = 180, st0 = old.style.transform || 'none', op0 = old.style.opacity || 1;
         old.style.pointerEvents = 'none'; old.style.transform = ''; old.style.opacity = '';
-        p.style.willChange = 'transform,opacity'; p.style.pointerEvents = 'none'; p.style.zIndex = 2; old.style.zIndex = 1;
-        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translate3d(' + (-dir * 18) + 'px,0,0)', opacity: 0 }], { duration: 140, easing: 'ease-out', fill: 'forwards' });
+        p.style.zIndex = 2; old.style.zIndex = 1;
+        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translate3d(' + (-dir * 18) + 'px,0,0)', opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { old.remove(); };
         var a2 = p.animate([{ transform: 'translate3d(' + (dir * 36) + 'px,0,0)', opacity: 0 }, { transform: 'translate3d(0,0,0)', opacity: 1 }], { duration: DUR, easing: EASE });
-        a2.onfinish = function () { p.style.pointerEvents = ''; p.style.willChange = ''; p.style.zIndex = ''; old.remove(); };
+        a2.onfinish = function () { p.style.zIndex = ''; old.remove(); };
       } else old.remove();
     } else if (dir === 'open' && p.animate) p.animate([{ transform: 'scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
   }
@@ -354,6 +354,8 @@
       if (pn.animate) pn.animate([{ transform: st, opacity: op }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1)' });
     });
   }
+  /* decode the pin and owl art once, up front, so the first page turn never waits on an image */
+  ['assets/pin.webp', 'assets/owl-head.webp', 'assets/grain.png'].forEach(function (u) { var im = new Image(); im.decoding = 'async'; im.src = u; if (im.decode) im.decode().catch(function () {}); });
   function openPanel(anim) { inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
   function showHub() { cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(DI(0)); }
   

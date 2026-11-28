@@ -114,7 +114,7 @@
     });
     function end() {
       if (!dragging) return; dragging = false; lean(0); el.classList.remove('turning');
-      if (moved) { commit(cand); say(cand, true); closeSoon(700); if (o.onDragEnd) o.onDragEnd(); return; }
+      if (moved) { commit(cand); say(cand, true); closeSoon(260); if (o.onDragEnd) o.onDragEnd(); return; }
       var b = downT && downT.closest ? downT.closest('.wi') : null;
       if (b) { commit(+b.dataset.i); say(+b.dataset.i, true); closeSoon(700); } else closeSoon(1400);
     }
