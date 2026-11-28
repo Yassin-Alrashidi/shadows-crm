@@ -9,7 +9,7 @@
   var DIALORD = ['expenses', 'assets', 'resign', 'me', 'home', 'tasks', 'attend', 'leaves', 'clients'];
   function DI(oi) { return DIALORD.indexOf(ORDER[oi]); }
   var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [], client_members: [] };
-  var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '' };
+  var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '', view: 'board' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
 
@@ -233,11 +233,30 @@
     h += ev.length ? ev.slice(0, 8).map(function (e) { return '<button class="item" data-go="' + e.p + '"><div class="t">' + esc(e.txt) + '</div><div class="m">' + pill(e.st, T(e.k + e.st)) + '<span>' + esc(nameOf(e.who)) + '</span><span>' + I18N.ago(e.at) + '</span></div></button>'; }).join('') : EMPTY();
     return h;
   };
+  /* ---------- deadlines view for tasks ---------- */
+  function viewBar() { return '<div class="chips"><button class="chip' + (filters.view === 'board' ? ' on' : '') + '" data-f="view:board">' + L('Board', 'اللوحة') + '</button><button class="chip' + (filters.view === 'deadlines' ? ' on' : '') + '" data-f="view:deadlines">' + L('Deadlines', 'المواعيد') + '</button></div>'; }
+  function deadlines(rows) {
+    var open = rows.filter(function (t) { return t.status !== 'done' && t.due_date; }).sort(function (a, b) { return a.due_date.localeCompare(b.due_date); });
+    if (!open.length) return EMPTY();
+    var today = ymd(new Date()), tom = ymd(new Date(Date.now() + 864e5)), groups = [], idx = {};
+    open.forEach(function (t) {
+      var k = t.due_date < today ? 'late' : t.due_date; if (!(k in idx)) { idx[k] = groups.length; groups.push({ k: k, rows: [] }); } groups[idx[k]].rows.push(t);
+    });
+    var wd = function (d) { return new Date(d + 'T12:00:00').toLocaleDateString(I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'short' }); };
+    return groups.map(function (g) {
+      var lbl = g.k === 'late' ? L('Overdue', 'متأخرة') : g.k === today ? L('Today', 'النهارده') : g.k === tom ? L('Tomorrow', 'بكرة') : wd(g.k);
+      return '<div class="dl' + (g.k === 'late' ? ' late' : g.k === today ? ' today' : '') + '"><h2>' + lbl + '<em>' + g.rows.length + '</em></h2>' + g.rows.map(function (t) {
+        return '<button class="item dlrow" data-task="' + t.id + '"><span class="dlbar"></span><div><div class="t">' + esc(t.title) + '</div><div class="m">' + (t.client_id ? '<span>' + esc(clientName(t.client_id)) + '</span>' : '') + '<span>' + (t.team ? T('whole') : esc(nameOf(t.assigned_to))) + '</span>' + (g.k === 'late' ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + ckChip(t) + '</div></div></button>';
+      }).join('') + '</div>';
+    }).join('');
+  }
   V.tasks = function () {
     var rows = D.tasks.filter(function (t) { return (isMgr() && scope === 'all') || t.assigned_to === me.id || t.created_by === me.id || t.team; }).filter(function (t) { return filters.tasks === 'all' || t.status === filters.tasks; });
     var po = { urgent: 0, high: 1, normal: 2, low: 3 };
     rows.sort(function (a, b) { return (a.status === 'done') - (b.status === 'done') || po[a.priority] - po[b.priority] || (a.due_date || '9').localeCompare(b.due_date || '9'); });
     var h = '<h1>' + T('tasks') + '</h1>' + scopeBar() + chipBar('tasks', ['todo', 'in_progress', 'done'], 'st.');
+    h += viewBar();
+    if (filters.view === 'deadlines') return h + deadlines(rows);
     h += rows.length ? '<div class="board">' + rows.map(function (t, k) { var late = isLate(t), soon = isSoon(t); return '<button class="item note ' + (late ? 'nr' : t.status === 'done' ? 'ng' : t.status === 'in_progress' ? 'nb2' : 'ny') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div>' + (t.description ? '<p class="nd">' + esc(String(t.description).slice(0, 70)) + '</p>' : '') + '<div class="m">' + pill(t.status, T('st.' + t.status)) + (late ? pill('urgent', T('overdue')) : soon ? pill('high', T('soon')) : '') + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + ckChip(t) + '</div>' + (t.client_id || (isMgr() && scope === 'all' && t.assigned_to) ? '<div class="nf">' + (t.client_id ? '<span class="ncl">' + esc(clientName(t.client_id)) + '</span>' : '') + (isMgr() && scope === 'all' && t.assigned_to ? '<span>' + esc((nameOf(t.assigned_to) || '').split(' ')[0]) + '</span>' : '') + '</div>' : '') + '</button>'; }).join('') + '</div>' : EMPTY();
     return h;
   };

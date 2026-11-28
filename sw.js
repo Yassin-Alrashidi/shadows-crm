@@ -1,4 +1,4 @@
-var C='shadows-crm-v82';
+var C='shadows-crm-v83';
 var A=['./','index.html','css/app.css?v=74','css/light.css?v=74','css/polish.css?v=74','js/config.js?v=74','js/i18n.js?v=74','js/store.js?v=74','js/dial.js?v=74','js/fx.js?v=74','js/app.js?v=74','assets/pin.webp?v=74','join.html','results.html','assets/owl-head.webp','assets/owl-wings.webp','assets/wordmark.webp','assets/icon-192.png','assets/icon-512.png','assets/icon-maskable-512.png','assets/apple-touch-icon.png','assets/eye.webp','manifest.webmanifest'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(A)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==C&&x!=='shadows-fonts'}).map(function(x){return caches.delete(x)}))}).then(function(){return self.clients.claim()}).then(function(){return self.clients.matchAll({type:'window'})}).then(function(cl){cl.forEach(function(c){try{c.navigate(c.url)}catch(x){}})}))});
