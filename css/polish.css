@@ -382,3 +382,9 @@ html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{filte
 .mact em{font-style:normal;font-size:12px;opacity:.55;font-weight:800;white-space:nowrap}
 .mact .chip{flex:none;border-radius:99px!important;text-transform:none!important}
 .mact .chip{background:var(--soft)!important;color:var(--fg)!important;letter-spacing:.02em!important;font-weight:800;padding:8px 14px}
+
+/* v101 perf: the lens glow is a static layer instead of a filter on the animated SVG; the grain overlay (full-screen blend) rests while the lens is in use */
+#dial .oeye{filter:none!important}
+#dial .eyebtn::before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 6px 14px rgba(225,24,39,.35);z-index:-1;pointer-events:none;transition:opacity .15s}
+#dial.open .eyebtn::before{opacity:0}
+body.lensbusy::after{visibility:hidden}

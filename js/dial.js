@@ -85,7 +85,7 @@
     setTimeout(blink, 3500);
 
     var pvrow = el.querySelector('#pvrow'), pvt = [].slice.call(el.querySelectorAll('.pvt')), ring = el.querySelector('#eRing');
-    function pvset(deg, anim) { var pos = deg / STEP; pvrow.style.transition = anim ? 'transform .2s cubic-bezier(.25,.8,.3,1)' : 'none'; pvrow.style.transform = 'translateX(' + (-pos * 100).toFixed(1) + 'px)'; pvt.forEach(function (t, i) { var k = Math.max(0, 1 - Math.abs(i - pos)); t.style.transition = anim ? 'transform .2s, opacity .2s' : 'none'; t.style.transform = 'scale(' + (.86 + .24 * k).toFixed(3) + ')'; t.style.opacity = (.42 + .58 * k).toFixed(2); t.classList.toggle('on', k > .5); }); ring.style.transform = 'rotate(' + (deg * 2.4).toFixed(1) + 'deg)'; }
+    function pvset(deg, anim) { var pos = deg / STEP; pvrow.style.transition = anim ? 'transform .2s cubic-bezier(.25,.8,.3,1)' : 'none'; pvrow.style.transform = 'translateX(' + (-pos * 100).toFixed(1) + 'px)'; pvt.forEach(function (t, i) { var k = Math.max(0, 1 - Math.abs(i - pos)), tr = 'scale(' + (.86 + .24 * k).toFixed(3) + ')', op = (.42 + .58 * k).toFixed(2), tn = anim ? 'transform .2s, opacity .2s' : 'none', c = t._c || (t._c = {}); if (c.tn !== tn) { t.style.transition = tn; c.tn = tn; } if (c.tr !== tr) { t.style.transform = tr; c.tr = tr; } if (c.op !== op) { t.style.opacity = op; c.op = op; } var on = k > .5; if (c.on !== on) { t.classList.toggle('on', on); c.on = on; } }); ring.style.transform = 'rotate(' + (deg * 2.4).toFixed(1) + 'deg)'; }
     function put(deg, anim) { pvset(deg, anim); wheel.style.transition = anim ? 'transform .2s cubic-bezier(.25,.8,.3,1)' : 'none'; wheel.style.transform = 'translateZ(0) rotate(' + (-deg).toFixed(2) + 'deg)'; rot = deg; }
     function mark(i) { btns.forEach(function (b, k) { b.classList.toggle('on', k === i); }); }
     function say(i, on) { lab.textContent = items[i].label(); lab.classList.toggle('on', !!on); }
@@ -93,6 +93,8 @@
     put(cur * STEP, false); mark(cur);
     /* Physical dial: put a finger on the eye and turn it, clockwise or counter-clockwise, no tap first.
        The wheel follows the finger around its pivot, the page under the notch is the pick, release opens it. */
+    var busyT = null;
+    function busy(on) { clearTimeout(busyT); if (on) document.body.classList.add('lensbusy'); else busyT = setTimeout(function () { document.body.classList.remove('lensbusy'); }, 900); }
     var GAIN = .85, piv = null, a0 = 0, aPrev = 0, aAcc = 0, downT = null;
     function ang(e) { return Math.atan2(e.clientY - piv.y, e.clientX - piv.x) * 180 / Math.PI; }
     function closeSoon(ms) { clearTimeout(idle); idle = setTimeout(function () { setOpen(false); lab.classList.remove('on'); }, ms); }
@@ -101,9 +103,11 @@
       var onEye = !!t.closest('#eyebtn'), onDome = open && !!t.closest('.dome'); if (!onEye && !onDome) return;
       clearTimeout(idle); setOpen(true); clearTimeout(idle); downT = t; dragging = true; moved = false; sx = e.clientX;
       var r = wheel.getBoundingClientRect(); piv = { x: r.left, y: r.top }; aPrev = ang(e); aAcc = 0; startRot = cur * STEP; cand = cur;
-      el.classList.add('turning'); try { el.setPointerCapture(e.pointerId); } catch (x) {}
+      el.classList.add('turning'); busy(true); try { el.setPointerCapture(e.pointerId); } catch (x) {}
     });
-    el.addEventListener('pointermove', function (e) {
+    var pmE = null, pmR = 0;
+    el.addEventListener('pointermove', function (e) { if (!dragging) return; pmE = e; if (!pmR) pmR = requestAnimationFrame(function () { pmR = 0; var ev = pmE; pmE = null; if (ev && dragging) pmove(ev); }); });
+    function pmove(e) {
       if (!dragging) return;
       var a = ang(e), dd = a - aPrev; if (dd > 180) dd -= 360; if (dd < -180) dd += 360; aPrev = a; aAcc += dd;
       if (!moved && Math.abs(aAcc) < 4 && Math.abs(e.clientX - sx) < 6) return; moved = true;
@@ -111,15 +115,15 @@
       var deg = Math.max(-8, Math.min((n - 1) * STEP + 8, startRot + aAcc * GAIN)); put(deg, false); if (o.onDrag) o.onDrag((deg - cur * STEP) / STEP);
       var c = Math.max(0, Math.min(n - 1, Math.round(deg / STEP)));
       if (c !== cand) { cand = c; mark(c); say(c, true); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (x) {} } }
-    });
+    }
     function end() {
-      if (!dragging) return; dragging = false; lean(0); el.classList.remove('turning');
+      if (!dragging) return; if (pmE) { var fe = pmE; pmE = null; pmove(fe); } busy(false); dragging = false; lean(0); el.classList.remove('turning');
       if (moved) { commit(cand); say(cand, true); closeSoon(0); if (o.onDragEnd) o.onDragEnd(); return; }
       var b = downT && downT.closest ? downT.closest('.wi') : null;
       if (b) { commit(+b.dataset.i); say(+b.dataset.i, true); closeSoon(700); } else closeSoon(1400);
     }
     el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); el.classList.remove('turning'); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); closeSoon(300); if (o.onDragEnd) o.onDragEnd(); } });
+    el.addEventListener('pointercancel', function () { if (dragging) { busy(false); dragging = false; lean(0); el.classList.remove('turning'); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); closeSoon(300); if (o.onDragEnd) o.onDragEnd(); } });
     el.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); } });
     return { set: function (i) { cur = i; cand = i; mark(i); put(i * STEP, true); }, caption: function () {}, icon: icon, fx: function () { if (el.animate) el.animate([{ opacity: 1 }, { opacity: .7, offset: .5 }, { opacity: 1 }], { duration: 900 }); }, setLid: function (a) { lids(a || 0); } };
   };
