@@ -448,9 +448,9 @@
     var sc = (D.retainers || []).filter(function (r) { return r.client_id === c.id && r.month === mm; });
     var meets = (D.meeting_notes || []).filter(function (x) { return x.client_id === c.id && String(x.meeting_date || x.created_at || '') >= sd; });
     var scTxt = sc.map(function (r) { return r.label + ' ' + (Number(r.delivered) || 0) + '/' + (Number(r.promised) || 0); });
-    var text = c.name + ' · ' + L('Weekly report (internal)', 'تقرير الأسبوع (داخلي)') + '\n' + L('Tasks done', 'مهام خلصت') + ': ' + done.length + (done.length ? ' (' + done.map(function (t) { return t.title; }).join(', ') + ')' : '') + '\n' + L('Open', 'مفتوحة') + ': ' + open.length + ' · ' + L('overdue', 'متأخرة') + ': ' + late + '\n' + L('Time', 'الوقت') + ': ' + hm(secs) + '\n' + L('Posted', 'اتنشر') + ': ' + posted.length + ' · ' + L('in pipeline', 'في الطريق') + ': ' + next + (scTxt.length ? '\n' + L('Scope', 'السكوب') + ': ' + scTxt.join(', ') : '') + (meets.length ? '\n' + L('Meetings', 'اجتماعات') + ': ' + meets.length : '');
+    var text = c.name + ' · ' + L('Weekly report (internal)', 'تقرير الأسبوع (داخلي)') + '\n' + L('Tasks done', 'مهام خلصت') + ': ' + done.length + (done.length ? ' (' + done.map(function (t) { return t.title; }).join(', ') + ')' : '') + '\n' + L('Open', 'مفتوحة') + ': ' + open.length + ' · ' + L('overdue', 'متأخرة') + ': ' + late + '\n' + L('Time', 'الوقت') + ': ' + hms(secs) + '\n' + L('Posted', 'اتنشر') + ': ' + posted.length + ' · ' + L('in pipeline', 'في الطريق') + ': ' + next + (scTxt.length ? '\n' + L('Scope', 'السكوب') + ': ' + scTxt.join(', ') : '') + (meets.length ? '\n' + L('Meetings', 'اجتماعات') + ': ' + meets.length : '');
     var row = function (t, v) { return '<div class="payrow"><div><div class="t">' + t + '</div></div><span class="paytag">' + v + '</span></div>'; };
-    openSheet('<div class="rp"><small>' + L('INTERNAL ONLY', 'داخلي فقط') + '</small><h2>' + esc(c.name) + '</h2><p class="sub">' + L('Weekly report, last 7 days', 'تقرير الأسبوع، آخر 7 أيام') + '</p></div><div class="two3 rpk"><div class="kpi"><b>' + done.length + '</b><span>' + L('Done', 'خلصت') + '</span></div><div class="kpi' + (late ? ' red' : '') + '"><b>' + late + '</b><span>' + L('Overdue', 'متأخرة') + '</span></div><div class="kpi"><b>' + hm(secs) + '</b><span>' + L('Time', 'الوقت') + '</span></div></div>' +
+    openSheet('<div class="rp"><small>' + L('INTERNAL ONLY', 'داخلي فقط') + '</small><h2>' + esc(c.name) + '</h2><p class="sub">' + L('Weekly report, last 7 days', 'تقرير الأسبوع، آخر 7 أيام') + '</p></div><div class="two3 rpk"><div class="kpi"><b>' + done.length + '</b><span>' + L('Done', 'خلصت') + '</span></div><div class="kpi' + (late ? ' red' : '') + '"><b>' + late + '</b><span>' + L('Overdue', 'متأخرة') + '</span></div><div class="kpi"><b>' + hms(secs) + '</b><span>' + L('Time', 'الوقت') + '</span></div></div>' +
       (done.length ? done.slice(0, 8).map(function (t) { return '<div class="item" style="cursor:default"><div class="t">' + esc(t.title) + '</div></div>'; }).join('') : '<div class="calnone">' + L('No tasks finished this week.', 'مفيش مهام خلصت الأسبوع ده.') + '</div>') +
       row(L('Content posted', 'محتوى اتنشر'), posted.length) + row(L('Content in pipeline', 'محتوى في الطريق'), next) + row(L('Meetings', 'اجتماعات'), meets.length) + sc.map(function (r) { return row(esc(r.label), (Number(r.delivered) || 0) + ' / ' + (Number(r.promised) || 0)); }).join('') +
       '<button class="btn big" id="cwcopy" style="margin-top:14px">' + T('rep.copy') + '</button>');
@@ -532,14 +532,14 @@
     [].slice.call(document.querySelectorAll('#sheetin [data-cdel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('content_items', b.dataset.cdel); }).then(function () { reopen(true); }); }; });
   }
   /* ---------- time tracking ---------- */
-  function hm(sec) { sec = Math.max(0, Math.round(sec)); if (sec < 60) return sec + 's'; var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h + 'h ' + ('0' + m).slice(-2) + 'm'; }
+  function hms(sec) { sec = Math.max(0, Math.round(sec)); if (sec < 60) return sec + 's'; var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h + 'h ' + ('0' + m).slice(-2) + 'm'; }
   function entSec(e) { return e.ended_at ? Number(e.seconds) || 0 : Math.max(0, (Date.now() - new Date(e.started_at).getTime()) / 1000); }
   function myTimer() { return (D.time_entries || []).filter(function (e) { return e.user_id === me.id && !e.ended_at; })[0]; }
   function timeBlock(t) {
     var es = (D.time_entries || []).filter(function (e) { return e.task_id === t.id; });
     var tot = es.reduce(function (s, e) { return s + entSec(e); }, 0), run = myTimer();
     var mine = run && run.task_id === t.id;
-    return '<div class="tmrow"><div><small>' + L('Time on this task', 'الوقت على المهمة') + '</small><b class="tmv" ' + (mine ? 'data-tbase="' + (tot - entSec(run)) + '" data-tstart="' + new Date(run.started_at).getTime() + '"' : '') + '>' + hm(tot) + '</b></div><button type="button" class="btn ' + (mine ? '' : 'ghost') + '" data-tmr="' + t.id + '">' + (mine ? L('Stop', 'وقّف') : L('Start timer', 'ابدأ التايمر')) + '</button></div>';
+    return '<div class="tmrow"><div><small>' + L('Time on this task', 'الوقت على المهمة') + '</small><b class="tmv" ' + (mine ? 'data-tbase="' + (tot - entSec(run)) + '" data-tstart="' + new Date(run.started_at).getTime() + '"' : '') + '>' + hms(tot) + '</b></div><button type="button" class="btn ' + (mine ? '' : 'ghost') + '" data-tmr="' + t.id + '">' + (mine ? L('Stop', 'وقّف') : L('Start timer', 'ابدأ التايمر')) + '</button></div>';
   }
   function toggleTimer(t) {
     var run = myTimer();
@@ -553,9 +553,9 @@
     if (!es.length) return '';
     var by = {}; es.forEach(function (e) { by[e.user_id] = (by[e.user_id] || 0) + entSec(e); });
     var tot = es.reduce(function (s, e) { return s + entSec(e); }, 0);
-    return '<h2>' + L('Time this month', 'وقت الشهر') + ' · ' + hm(tot) + '</h2>' + Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }).map(function (u) { return '<div class="payrow"><div><div class="t">' + esc(nameOf(u)) + '</div></div><span class="paytag">' + hm(by[u]) + '</span></div>'; }).join('');
+    return '<h2>' + L('Time this month', 'وقت الشهر') + ' · ' + hms(tot) + '</h2>' + Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }).map(function (u) { return '<div class="payrow"><div><div class="t">' + esc(nameOf(u)) + '</div></div><span class="paytag">' + hms(by[u]) + '</span></div>'; }).join('');
   }
-  setInterval(function () { [].forEach.call(document.querySelectorAll('[data-tstart]'), function (el) { el.textContent = hm(Number(el.dataset.tbase) + (Date.now() - Number(el.dataset.tstart)) / 1000); }); }, 1000);
+  setInterval(function () { [].forEach.call(document.querySelectorAll('[data-tstart]'), function (el) { el.textContent = hms(Number(el.dataset.tbase) + (Date.now() - Number(el.dataset.tstart)) / 1000); }); }, 1000);
   /* ---------- monthly scope: promised vs delivered ---------- */
   function ymNow() { return ymd(new Date()).slice(0, 7); }
   function scopeBlock(c) {
