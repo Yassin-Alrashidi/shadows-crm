@@ -68,8 +68,10 @@ create table if not exists public.time_entries (
   started_at timestamptz not null default now(),
   ended_at timestamptz,
   seconds int not null default 0,
+  note text,
   created_at timestamptz not null default now()
 );
+alter table public.time_entries add column if not exists note text;
 alter table public.time_entries enable row level security;
 drop policy if exists "te read" on public.time_entries;
 drop policy if exists "te write" on public.time_entries;
@@ -79,3 +81,24 @@ create policy "te read" on public.time_entries for select to authenticated using
 create policy "te write" on public.time_entries for insert to authenticated with check (user_id = auth.uid());
 create policy "te update" on public.time_entries for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "te delete" on public.time_entries for delete to authenticated using (user_id = auth.uid() or public.is_manager());
+
+-- v97: content calendar per client
+create table if not exists public.content_items (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients(id) on delete cascade,
+  user_id uuid references auth.users(id),
+  title text not null,
+  platform text,
+  due_date date,
+  status text not null default 'idea',
+  created_at timestamptz not null default now()
+);
+alter table public.content_items enable row level security;
+drop policy if exists "ci read" on public.content_items;
+drop policy if exists "ci write" on public.content_items;
+drop policy if exists "ci update" on public.content_items;
+drop policy if exists "ci delete" on public.content_items;
+create policy "ci read" on public.content_items for select to authenticated using (true);
+create policy "ci write" on public.content_items for insert to authenticated with check (user_id = auth.uid());
+create policy "ci update" on public.content_items for update to authenticated using (true) with check (true);
+create policy "ci delete" on public.content_items for delete to authenticated using (user_id = auth.uid() or public.is_manager());

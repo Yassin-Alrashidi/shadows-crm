@@ -197,9 +197,20 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers' || n === 'time_entries') return []; throw e; }); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries', 'content_items'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers' || n === 'time_entries' || n === 'content_items') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
+    autoStop();
+  }
+  function cairoSecs(ms) { try { var p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Cairo', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' }).formatToParts(new Date(ms)), g = function (t) { return Number((p.filter(function (x) { return x.type === t; })[0] || {}).value) || 0; }; return g('hour') * 3600 + g('minute') * 60 + g('second'); } catch (e) { var d = new Date(ms); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(); } }
+  function autoStop() {
+    (D.time_entries || []).forEach(function (e) {
+      if (e.ended_at || e.user_id !== me.id) return;
+      var st = new Date(e.started_at).getTime(), cap = Math.min(st + 12 * 3600e3, st + (86400 - cairoSecs(st)) * 1000);
+      if (Date.now() < cap) return;
+      e.ended_at = new Date(cap).toISOString(); e.seconds = Math.round((cap - st) / 1000); e.note = 'auto-stopped';
+      Store.update('time_entries', e.id, { ended_at: e.ended_at, seconds: e.seconds, note: 'auto-stopped' }).catch(function () {});
+    });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
   window.addEventListener('online', function () { toast(L('Back online', 'رجع الإنترنت')); });
@@ -474,6 +485,21 @@
     var late = op.filter(isLate).length;
     return '<p class="sub">' + cl + ' ' + L(cl === 1 ? 'client' : 'clients', 'عملاء') + ' · ' + op.length + ' ' + L('open tasks', 'مهام مفتوحة') + (late ? ' · ' + late + ' ' + L('overdue', 'متأخرة') : '') + '</p>';
   }
+  /* ---------- content calendar ---------- */
+  var CSTAT = ['idea', 'design', 'approved', 'posted'], CPLAT = ['Instagram', 'TikTok', 'Facebook', 'LinkedIn', 'YouTube', 'Other'];
+  var cstLabel = function (v) { return { idea: L('Idea', 'فكرة'), design: L('In design', 'في التصميم'), approved: L('Approved', 'معتمد'), posted: L('Posted', 'اتنشر') }[v] || v; };
+  function contentBlock(c) {
+    var rows = (D.content_items || []).filter(function (x) { return x.client_id === c.id; }).sort(function (a, b) { return ((a.status === 'posted') - (b.status === 'posted')) || (a.due_date || '9').localeCompare(b.due_date || '9'); });
+    var n = rows.filter(function (x) { return x.status !== 'posted'; }).length;
+    return '<h2>' + L('Content calendar', 'كالندر المحتوى') + (rows.length ? ' · ' + n : '') + '</h2>' +
+      (rows.length ? rows.slice(0, 40).map(function (x) { var late = x.status !== 'posted' && x.due_date && x.due_date < ymd(new Date()); return '<div class="payrow cnt ' + (x.status === 'posted' ? 'paid' : '') + (late ? ' late' : '') + '"><div><div class="t">' + esc(x.title) + '</div><div class="m"><span>' + esc(x.platform || '') + '</span>' + (x.due_date ? '<span>' + I18N.date(x.due_date) + '</span>' : '') + '</div></div><button type="button" class="chip' + (x.status === 'posted' ? '' : ' on') + '" data-cst="' + x.id + '">' + cstLabel(x.status) + '</button><button type="button" class="lkdel" data-cdel="' + x.id + '" aria-label="' + T('delete') + '">×</button></div>'; }).join('') : '<div class="calnone">' + L('Nothing planned yet.', 'مفيش محتوى مخطط لسه.') + '</div>') +
+      '<div class="two" style="margin-top:8px"><input id="fct" placeholder="' + L('Post or reel idea', 'فكرة البوست أو الريل') + '"><select id="fcp">' + CPLAT.map(function (p) { return '<option>' + p + '</option>'; }).join('') + '</select></div><div class="row" style="margin-top:8px"><input id="fcd" type="date"><button class="btn" id="cadd">' + L('Add', 'ضيف') + '</button></div>';
+  }
+  function bindContent(c, reopen) {
+    var add = $('#cadd'); if (add) add.onclick = function () { var t = f('#fct').trim(); if (!t) return $('#fct').focus(); act(function () { return Store.insert('content_items', { client_id: c.id, title: t.slice(0, 100), platform: f('#fcp'), due_date: f('#fcd') || null, status: 'idea' }); }).then(function () { reopen(true); }); };
+    [].slice.call(document.querySelectorAll('#sheetin [data-cst]')).forEach(function (b) { b.onclick = function () { var x = D.content_items.filter(function (r) { return r.id === b.dataset.cst; })[0]; if (!x) return; var nx = CSTAT[(CSTAT.indexOf(x.status) + 1) % CSTAT.length]; act(function () { return Store.update('content_items', x.id, { status: nx }); }).then(function () { reopen(true); }); }; });
+    [].slice.call(document.querySelectorAll('#sheetin [data-cdel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('content_items', b.dataset.cdel); }).then(function () { reopen(true); }); }; });
+  }
   /* ---------- time tracking ---------- */
   function hm(sec) { sec = Math.max(0, Math.round(sec)); if (sec < 60) return sec + 's'; var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h + 'h ' + ('0' + m).slice(-2) + 'm'; }
   function entSec(e) { return e.ended_at ? Number(e.seconds) || 0 : Math.max(0, (Date.now() - new Date(e.started_at).getTime()) / 1000); }
@@ -638,11 +664,12 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      teamBlock(c) + scopeBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + scopeBlock(c) + contentBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
     bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    bindContent(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindScope(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindPay(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     var na = $('#cnadd'); if (na) { var gon = function () { var v = f('#fcn').trim(); if (!v) return; act(function () { return Store.insert('client_notes', { client_id: id, body: v.slice(0, 600) }); }).then(function () { var y = $('#sheet').scrollTop; clientDetail(id); $('#sheet').scrollTop = y; }); }; na.onclick = gon; $('#fcn').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gon(); } }; }
