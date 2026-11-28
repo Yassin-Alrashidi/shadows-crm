@@ -271,3 +271,32 @@ html[data-theme=dark] body .pk.on{background:#E11827!important}
 html body #sheet .card{margin-bottom:8px!important}
 html body .btn{border:0!important}
 html body .btn.ghost,html body .btn.sec{background:var(--soft)!important}
+
+/* ===== v74b: new lens only. panels, dome and wheel stay exactly as v73. ===== */
+#dial .oeye .lens,#dial .oeye .bez,#dial .oeye .tk1,#dial .oeye .tk2{display:none}
+#dial .oeye{filter:drop-shadow(0 6px 14px rgba(225,24,39,.35))}
+#dial.open .oeye{filter:drop-shadow(0 0 0 transparent)}
+#eRing{transform-origin:60px 60px}
+#dial #eBl,#ePup{transform-box:fill-box;transform-origin:center}
+#dial #eBl{transform-box:view-box;transform-origin:50% 50%}
+html body #dial.open .eyebtn{box-shadow:0 0 0 2px rgba(255,255,255,.9)!important;border-radius:50%!important}
+html body #dial .eyebtn{border-radius:50%!important}
+/* brand lockup, full strength red */
+.brandlock{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.brandline{font:600 10.5px 'Chakra Petch','Archivo',sans-serif!important;letter-spacing:.34em!important;color:#E11827!important;opacity:1!important;text-transform:uppercase;direction:ltr}
+.menufoot .demobar{margin:8px 0!important;flex-wrap:wrap;gap:4px 10px;line-height:1.35}
+.menufoot .demobar button{white-space:nowrap}
+.emptyeye{width:46px!important;height:46px!important;opacity:.3!important}
+
+/* ===== v74b: desktop light mode. wide calm column, no tinted slab, no grey smear under the lens ===== */
+html:not([data-theme=dark]) .panel{background:transparent!important}
+html:not([data-theme=dark]) .dialwrap:after{display:none!important}
+html:not([data-theme=dark]) body{background:#fff!important}
+@media (min-width:900px){
+  .panel{max-width:920px!important;padding-inline:36px!important}
+  #burger{left:max(18px,calc(50% - 470px))!important;right:auto!important}
+  #addb{right:max(18px,calc(50% - 470px))!important;left:auto!important}
+  .panel .grid{grid-template-columns:repeat(3,1fr)!important}
+  .grid .kpi:first-child{grid-column:1/-1}
+  .board{grid-template-columns:repeat(3,1fr)!important}
+}

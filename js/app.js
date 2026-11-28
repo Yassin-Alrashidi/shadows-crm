@@ -200,7 +200,7 @@
   async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
 
   /* ---------- panels ---------- */
-  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 120 68" aria-hidden="true"><path d="M3 34Q60 -8 117 34Q60 76 3 34Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="34" r="15" fill="currentColor" opacity=".55"/><circle cx="60" cy="34" r="6.5" fill="var(--bg)"/></svg><div>' + EMPTYTXT() + '</div></div>'; };
+  var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="24" cy="24" r="6" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/></svg><div>' + EMPTYTXT() + '</div></div>'; };
   function openLbl(n) { return I18N.lang === 'ar' ? (n ? 'Tasks مفتوحة: ' + n : 'مفيش Tasks مفتوحة') : (n === 0 ? 'No open tasks' : n + (n === 1 ? ' open task' : ' open tasks')); }
   function EMPTYTXT() { var m = { home: ['All quiet. Nothing needs you.', 'هادي. مفيش حاجة محتاجاك.'], tasks: ['No tasks here. Tap + to add one.', 'مفيش مهام هنا. دوس + وضيف واحدة.'], attend: ['No check-ins yet.', 'مفيش حضور متسجل لسه.'], leaves: ['No leave requests.', 'مفيش طلبات إجازة.'], clients: ['No clients yet. Tap + to add one.', 'مفيش عملاء لسه. دوس + وضيف واحد.'], expenses: ['No expenses yet.', 'مفيش مصروفات لسه.'], assets: ['No files yet. Tap New asset to add a link.', 'مفيش ملفات لسه. دوس ملف جديد وضيف لينك.'], resign: ['No resignations.', 'مفيش استقالات.'], me: ['Nothing here.', 'مفيش حاجة هنا.'] }[ORDER[cur] || 'home']; return m ? L(m[0], m[1]) : T('none'); }
   var ENNAME = { expenses: 'EXPENSES', assets: 'ASSETS', home: 'DASHBOARD', tasks: 'TASKS', attend: 'ATTENDANCE', leaves: 'LEAVES', clients: 'CLIENTS', resign: 'RESIGNATIONS', me: 'PROFILE' };
@@ -340,7 +340,7 @@
   
   function goto(i, dir) {
     if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(i); return; }
-    if (i === cur) return; var d = dir || (i > cur ? 1 : -1); if (document.documentElement.dir === 'rtl') d = -d; cur = i; render(d); if (dial) dial.set(i);
+    if (i === cur) return; var d = dir || (i > cur ? 1 : -1); cur = i; render(d); if (dial) dial.set(i);
   }
 
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
@@ -374,13 +374,13 @@
 
   /* menu */
   function buildMenu() {
-    $('#menulist').innerHTML = '<button class="menuitem hub" data-mi="hub"><span class="mn">00</span><span class="mi">' + T('lens') + '</span></button>' + ORDER.map(function (id, i) { return '<button class="menuitem' + (inPanel && cur === i ? ' on' : '') + '" data-mi="' + i + '"><span class="mn">0' + (i + 1) + '</span><span class="mi">' + T(id) + '</span></button>'; }).join('');
+    $('#menulist').innerHTML = ORDER.map(function (id, i) { return '<button class="menuitem' + (inPanel && cur === i ? ' on' : '') + '" data-mi="' + i + '"><span class="mn">0' + (i + 1) + '</span><span class="mi">' + T(id) + '</span></button>'; }).join('');
     $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout');
   }
   function openMenu() { buildMenu(); $('#menu').classList.add('on'); $('#menubg').classList.add('on'); }
   function closeMenu() { $('#menu').classList.remove('on'); $('#menubg').classList.remove('on'); }
   $('#burger').onclick = openMenu; $('#menuclose').onclick = closeMenu; $('#menubg').onclick = closeMenu;
-  $('#menulist').onclick = function (e) { var b = e.target.closest('[data-mi]'); if (!b) return; closeMenu(); var v = b.dataset.mi; if (v === 'hub') { if (inPanel) { history.back(); } } else goto(+v); };
+  $('#menulist').onclick = function (e) { var b = e.target.closest('[data-mi]'); if (!b) return; closeMenu(); goto(+b.dataset.mi); };
   $('#mout2').onclick = function () { closeMenu(); logout(); };
   $('#addb').onclick = function () { quickAdd(); };
 
@@ -604,10 +604,11 @@
   async function logout() { document.body.classList.remove('intro'); await Store.signOut(); me = null; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = ''; $('#app').hidden = true; $('#auth').hidden = false; chrome(); }
 
   async function enter() {
+    try { localStorage.setItem('crm.entered', '1'); } catch (e) {}
     $('#auth').hidden = true; $('#app').hidden = false; cur = 0; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = '';
     me = Store.me() || me; await load(); me = (profiles.filter(function (p) { return p.id === me.id; })[0]) || me; chrome();
     var items = ORDER.map(function (id) { return { id: id, label: function () { return T(id); }, sub: function () { return id === 'home' ? '' : id === 'me' ? T('profile') : T('dial.tap'); } }; });
-    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i) { cur = i; openPanel('open'); }, onTap: function () { openPanel('open'); } });
+    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i, d) { var was = cur; cur = i; openPanel(was === i ? 'open' : d); }, onTap: function () { openPanel('open'); } });
     else dial.set(0);
     eyeState();
     if (Store.mode === 'live' && !enter.poll) enter.poll = setInterval(function () {
@@ -624,7 +625,9 @@
   /* ---------- boot ---------- */
   (async function () {
     chrome();
-    try { me = await Store.session(); } catch (e) { me = null; }
+    var chosen = false; try { chosen = localStorage.getItem('crm.entered') === '1'; } catch (e) {}
+    if (!chosen) { try { await Store.signOut(); } catch (e) {} me = null; }
+    else { try { me = await Store.session(); } catch (e) { me = null; } }
     $('#boot').style.transition = 'opacity .4s'; 
     if (me) await enter(); else { $('#auth').hidden = false; }
     $('#boot').style.opacity = 0; setTimeout(function () { $('#boot').remove(); }, 450);

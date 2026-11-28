@@ -18,30 +18,36 @@
 
 
 
-  /* The owl eye: layered vector. Glow, dark rim, iris with fibres and a limbal ring, deep pupil with a real highlight, lids with thickness. Static gradients only; motion is transform-only. */
+  /* The lens: the SHADOWS camera lens as vector, after the original photo. Thick segmented red ring, dark inner ring,
+     inner red shutter ring, dark round centre with a glint. The centre is a wide round pupil (owl), never a narrow human eye.
+     Motion is a camera shutter: the centre closes in, the blades slide inward and open out again. Transform-only. */
   function eyeSvg() {
-    var AL = 'M3 34Q60 -8 117 34Q60 76 3 34Z', fib = '', i, an, r1, r2, c, s;
-    for (i = 0; i < 44; i++) { an = i / 44 * Math.PI * 2; r1 = 10.4; r2 = i % 2 ? 17.6 : 19.4; c = Math.cos(an); s = Math.sin(an); fib += 'M' + (60 + c * r1).toFixed(2) + ' ' + (34 + s * r1).toFixed(2) + 'L' + (60 + c * r2).toFixed(2) + ' ' + (34 + s * r2).toFixed(2); }
-    var tk1 = '', tk2 = ''; for (i = 0; i < 60; i++) { an = i / 60 * Math.PI * 2; c = Math.cos(an); s = Math.sin(an); var maj = i % 5 === 0, q = 'M' + (60 + c * 51.4).toFixed(2) + ' ' + (60 + s * 51.4).toFixed(2) + 'L' + (60 + c * (maj ? 55 : 53.4)).toFixed(2) + ' ' + (60 + s * (maj ? 55 : 53.4)).toFixed(2); if (maj) tk2 += q; else tk1 += q; }
+    var i, an, c, s, seg = '', div = '', bl = '', bd = '', N = 12, gap = .9, RO = 58, RI = 41;
+    function pt(r, a) { return (60 + r * Math.cos(a)).toFixed(2) + ' ' + (60 + r * Math.sin(a)).toFixed(2); }
+    for (i = 0; i < N; i++) {
+      var a0 = i / N * Math.PI * 2 + gap / RO, a1 = (i + 1) / N * Math.PI * 2 - gap / RO, b0 = i / N * Math.PI * 2 + gap / RI, b1 = (i + 1) / N * Math.PI * 2 - gap / RI;
+      seg += '<path d="M' + pt(RO, a0) + 'A' + RO + ' ' + RO + ' 0 0 1 ' + pt(RO, a1) + 'L' + pt(RI, b1) + 'A' + RI + ' ' + RI + ' 0 0 0 ' + pt(RI, b0) + 'Z" fill="url(#lgR' + (i % 2) + ')"/>';
+    }
+    for (i = 0; i < 6; i++) {
+      var q0 = i / 6 * Math.PI * 2, q1 = (i + 1) / 6 * Math.PI * 2 - .05, R1 = 30, R0 = 19;
+      bl += '<path d="M' + pt(R0, q0 + .5) + 'L' + pt(R1, q0) + 'A' + R1 + ' ' + R1 + ' 0 0 1 ' + pt(R1, q1) + 'L' + pt(R0, q1 + .5) + 'Z" fill="url(#lgB)" stroke="rgba(0,0,0,.55)" stroke-width=".7"/>';
+      bd += 'M' + pt(R0, q0 + .5) + 'L' + pt(R1, q0);
+    }
     return '<button type="button" class="eyebtn" id="eyebtn" aria-label="Menu"><svg class="oeye" viewBox="0 0 120 120" aria-hidden="true"><defs>' +
-      '<clipPath id="eClip"><path d="' + AL + '"/></clipPath>' +
-      '<radialGradient id="eGl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff2535" stop-opacity=".5"/><stop offset=".55" stop-color="#E11827" stop-opacity=".18"/><stop offset="1" stop-color="#E11827" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="eSc" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#1b0b0e"/><stop offset="1" stop-color="#040203"/></radialGradient>' +
-      '<radialGradient id="eIg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2a0307"/><stop offset=".34" stop-color="#7d0812"/><stop offset=".6" stop-color="#E11827"/><stop offset=".84" stop-color="#ff4350"/><stop offset=".94" stop-color="#a30c18"/><stop offset="1" stop-color="#2a0307"/></radialGradient>' +
-      '<radialGradient id="ePg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#000"/><stop offset=".8" stop-color="#050203"/><stop offset="1" stop-color="#1a0407"/></radialGradient>' +
-      '<linearGradient id="eSh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".78"/><stop offset=".42" stop-color="#000" stop-opacity=".18"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient>' +
-      '<linearGradient id="eLg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a0b13"/><stop offset="1" stop-color="#14050a"/></linearGradient>' +
-      '<clipPath id="eLens"><circle cx="60" cy="60" r="47.5"/></clipPath><linearGradient id="eMt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a66"/><stop offset=".3" stop-color="#E11827"/><stop offset=".62" stop-color="#5a0610"/><stop offset="1" stop-color="#ff2f40"/></linearGradient><radialGradient id="eVg" cx="50%" cy="50%" r="50%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient><radialGradient id="eRg" cx="50%" cy="34%" r="72%"><stop offset="0" stop-color="#43434b"/><stop offset=".5" stop-color="#131317"/><stop offset="1" stop-color="#050507"/></radialGradient></defs>' +
-      '<circle class="lens" cx="60" cy="60" r="57"/><g id="eRing"><path class="tk1" d="' + tk1 + '"/><path class="tk2" d="' + tk2 + '"/></g><circle class="bez" cx="60" cy="60" r="49"/>' +
-      '<g clip-path="url(#eLens)"><g transform="translate(60 60) scale(.9) translate(-60 -34)">' +
-      '<ellipse class="glow" cx="60" cy="34" rx="74" ry="46" fill="url(#eGl)"/>' +
-      '<path d="' + AL + '" fill="url(#eSc)"/>' +
-      '<g clip-path="url(#eClip)"><g id="eIris"><circle cx="60" cy="34" r="21" fill="url(#eIg)"/><path class="fib" d="' + fib + '"/><circle class="rg" cx="60" cy="34" r="20.2"/><circle class="rg2" cx="60" cy="34" r="10.6"/>' +
-      '<circle id="ePup" cx="60" cy="34" r="10.4" fill="url(#ePg)"/><ellipse cx="55.4" cy="28.6" rx="3.6" ry="2.7" fill="#fff" opacity=".95" transform="rotate(-28 55.4 28.6)"/><circle cx="64.6" cy="39.6" r="1.2" fill="#fff" opacity=".5"/></g>' +
-      '<rect x="0" y="0" width="120" height="68" fill="url(#eSh)"/>' +
-      '<g id="eLu" class="lidg"><path class="lidb" d="M-10 -40H130V34Q60 76 -10 34Z"/><path class="lid" d="M-10 -40H130V34Q60 76 -10 34Z"/></g>' +
-      '<g id="eLd" class="lidg"><path class="lidb" d="M-10 108H130V34Q60 -8 -10 34Z"/><path class="lid" d="M-10 108H130V34Q60 -8 -10 34Z"/></g></g>' +
-      '<path class="olb" d="' + AL + '"/><path class="ol" d="' + AL + '"/></g></g><circle cx="60" cy="60" r="47.5" fill="url(#eVg)"/><circle class="lensr" cx="60" cy="60" r="57"/><path d="M22 40A44 44 0 0 1 64 17" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/></svg></button><div class="dlabel" id="dlabel"></div>';
+      '<linearGradient id="lgR0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b8101d"/><stop offset="1" stop-color="#7c0a14"/></linearGradient>' +
+      '<linearGradient id="lgR1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c0d19"/><stop offset="1" stop-color="#5e070f"/></linearGradient>' +
+      '<radialGradient id="lgB" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#4a050c"/><stop offset="1" stop-color="#8a0b16"/></radialGradient>' +
+      '<radialGradient id="lgP" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#14070a"/><stop offset="1" stop-color="#020102"/></radialGradient></defs>' +
+      '<circle cx="60" cy="60" r="59.4" fill="#4a050c"/>' +
+      '<g id="eRing">' + seg + '</g>' +
+      '<circle cx="60" cy="60" r="' + (RI - 1) + '" fill="#0a0507"/>' +
+      '<circle cx="60" cy="60" r="35" fill="none" stroke="rgba(255,90,100,.22)" stroke-width="1"/>' +
+      '<circle cx="60" cy="60" r="31.5" fill="#2a040a"/>' +
+      '<g id="eBl" style="transform-origin:60px 60px;transform-box:view-box">' + bl + '<path d="' + bd + '" stroke="rgba(255,120,120,.25)" stroke-width=".6" fill="none"/></g>' +
+      '<g id="eIris"><circle id="ePup" cx="60" cy="60" r="17.5" fill="url(#lgP)"/><circle cx="60" cy="60" r="17.5" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>' +
+      '<ellipse cx="54.6" cy="53.8" rx="4.6" ry="3.5" fill="#fff" opacity=".92" transform="rotate(-28 55.2 54.6)"/><circle cx="65.4" cy="66" r="1.3" fill="#fff" opacity=".5"/></g>' +
+      '<path d="M22 40A44 44 0 0 1 64 17" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>' +
+      '</svg></button><div class="dlabel" id="dlabel"></div>';
   }
 
   /* Camera-zoom dome: a red half circle at the bottom centre. Drag left or right to turn the wheel, release to open the page on top. */
@@ -55,15 +61,25 @@
     el.innerHTML = h;
     var wheel = el.querySelector('#wheel'), lab = el.querySelector('#dlabel'), btns = [].slice.call(el.querySelectorAll('.wi'));
     var open = false, idle = null, lastClose = 0, eb = el.querySelector('#eyebtn');
-    function setOpen(v) { open = v; el.classList.toggle('open', v); if (v) { var pp = el.querySelector('#ePup'); if (pp && pp.animate) pp.animate([{ transform: 'scale(.62)' }, { transform: 'scale(1)' }], { duration: 520, easing: 'cubic-bezier(.2,.9,.3,1)' }); } clearTimeout(idle); if (v) idle = setTimeout(function () { setOpen(false); lab.classList.remove('on'); }, 3500); else lastClose = Date.now(); }
+    function setOpen(v) { open = v; el.classList.toggle('open', v); if (v) { shutter(true); } clearTimeout(idle); if (v) idle = setTimeout(function () { setOpen(false); lab.classList.remove('on'); }, 3500); else { lastClose = Date.now(); shutter(false); } }
     eb.addEventListener('click', function () { if (!open && Date.now() - lastClose > 350) setOpen(true); });
-    var dragging = false, moved = false, sx = 0, startRot = 0, pup = el.querySelector('#eIris'), lu = el.querySelector('#eLu'), ld = el.querySelector('#eLd'), lidA = 0;
+    var dragging = false, moved = false, sx = 0, startRot = 0, pup = el.querySelector('#eIris'), pp = el.querySelector('#ePup'), bl = el.querySelector('#eBl'), lidA = 0;
     function lean(x) { pup.style.transition = x ? 'none' : 'transform .35s ease'; pup.style.transform = 'translateX(' + (x * .9).toFixed(1) + 'px)'; }
-    function lids(a, ms) { lidA = a; var e = Math.min(a, .72) * .35, u = -46 * (1 - e), t = ms == null ? '.5s' : ms + 'ms'; lu.style.transition = ld.style.transition = 'transform ' + t + ' ease'; lu.style.transform = 'translateY(' + u.toFixed(1) + 'px)'; ld.style.transform = 'translateY(' + (-u).toFixed(1) + 'px)'; }
+    /* shutter: centre closes in, blades slide inward past it, then open out. */
+    function shutter(opening) {
+      if (!pp.animate) return;
+      var base = 1 - Math.min(lidA, .72) * .5;
+      pp.animate(opening ? [{ transform: 'scale(' + base + ')' }, { transform: 'scale(.34)', offset: .35 }, { transform: 'scale(1.06)', offset: .8 }, { transform: 'scale(1)' }] : [{ transform: 'scale(1)' }, { transform: 'scale(.4)', offset: .45 }, { transform: 'scale(' + base + ')' }], { duration: opening ? 560 : 420, easing: 'cubic-bezier(.3,.8,.3,1)' });
+      bl.animate(opening ? [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.52) rotate(-28deg)', offset: .4 }, { transform: 'scale(1) rotate(-60deg)' }] : [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.6) rotate(24deg)', offset: .5 }, { transform: 'scale(1) rotate(60deg)' }], { duration: opening ? 560 : 420, easing: 'cubic-bezier(.3,.8,.3,1)' });
+    }
+    function lids(a, ms) { lidA = a; var k = 1 - Math.min(a, .72) * .5; pp.style.transition = 'transform ' + (ms == null ? 500 : ms) + 'ms ease'; pp.style.transform = 'scale(' + k.toFixed(2) + ')'; }
     lids(0, 0);
     function blink() {
-      if (lu.animate && !dragging && !document.hidden) { var e = Math.min(lidA, .72) * .35, u = -46 * (1 - e), kf = function (y) { return [{ transform: 'translateY(' + y + 'px)' }, { transform: 'translateY(0px)', offset: .45 }, { transform: 'translateY(' + y + 'px)' }]; };
-        lu.animate(kf(u.toFixed(1)), { duration: 340, easing: 'ease-in-out' }); ld.animate(kf((-u).toFixed(1)), { duration: 340, easing: 'ease-in-out' }); }
+      if (pp.animate && !dragging && !document.hidden) {
+        var k = 1 - Math.min(lidA, .72) * .5;
+        pp.animate([{ transform: 'scale(' + k + ')' }, { transform: 'scale(.08)', offset: .45 }, { transform: 'scale(' + k + ')' }], { duration: 300, easing: 'ease-in-out' });
+        bl.animate([{ transform: 'scale(1)' }, { transform: 'scale(.62)', offset: .45 }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-in-out' });
+      }
       setTimeout(blink, 5000 + Math.random() * 4500);
     }
     setTimeout(blink, 3500);
