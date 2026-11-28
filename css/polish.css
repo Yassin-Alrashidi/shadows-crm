@@ -352,3 +352,12 @@ html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{filte
 .payrow .paytag{padding:2px 9px;border-radius:99px;background:var(--soft);font-size:11px;letter-spacing:.04em;line-height:1.5}
 .payrow.late .paytag{background:#E11827;color:#fff}
 .payrow .m span:first-child{font-weight:800}
+/* v95: monthly scope */
+.scrow{padding:12px 0}
+.sct{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sct b{font-weight:800}
+.sct span{font-weight:800;font-variant-numeric:tabular-nums}
+.scrow.full .sct span{color:#E11827}
+.scbar{display:block;height:6px;border-radius:99px;background:var(--soft);margin:8px 0;overflow:hidden}
+.scbar u{display:block;height:100%;border-radius:99px;background:#E11827;text-decoration:none}
+.scbt{display:flex;gap:8px}

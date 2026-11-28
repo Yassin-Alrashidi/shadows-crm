@@ -38,3 +38,23 @@ create policy "inv read" on public.invoices for select to authenticated using (p
 create policy "inv write" on public.invoices for insert to authenticated with check (public.is_manager() and user_id = auth.uid());
 create policy "inv update" on public.invoices for update to authenticated using (public.is_manager()) with check (public.is_manager());
 create policy "inv delete" on public.invoices for delete to authenticated using (public.is_manager());
+
+-- v95: monthly scope (promised vs delivered) per client
+create table if not exists public.retainers (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients(id) on delete cascade,
+  month text not null,
+  label text not null,
+  promised int not null default 0,
+  delivered int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.retainers enable row level security;
+drop policy if exists "ret read" on public.retainers;
+drop policy if exists "ret write" on public.retainers;
+drop policy if exists "ret update" on public.retainers;
+drop policy if exists "ret delete" on public.retainers;
+create policy "ret read" on public.retainers for select to authenticated using (true);
+create policy "ret write" on public.retainers for insert to authenticated with check (public.is_manager());
+create policy "ret update" on public.retainers for update to authenticated using (true) with check (true);
+create policy "ret delete" on public.retainers for delete to authenticated using (public.is_manager());

@@ -8,7 +8,7 @@
   /* wheel order: Home sits in the middle, next pages go right, previous pages go left */
   var DIALORD = ['expenses', 'assets', 'resign', 'me', 'home', 'tasks', 'attend', 'leaves', 'clients'];
   function DI(oi) { return DIALORD.indexOf(ORDER[oi]); }
-  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [], client_members: [] };
+  var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], retainers: [], expenses: [], assets: [], client_members: [] };
   var cur = 0, dial = null, scope = 'mine', filters = { act: 'all', tasks: 'all', leaves: 'all', clients: 'all', q: '', view: 'board' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
   var nameOf = function (id) { var p = profiles.filter(function (x) { return x.id === id; })[0]; return p ? p.name || p.email : '?'; };
@@ -197,8 +197,8 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices') return []; throw e; }); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
@@ -474,6 +474,27 @@
     var late = op.filter(isLate).length;
     return '<p class="sub">' + cl + ' ' + L(cl === 1 ? 'client' : 'clients', 'عملاء') + ' · ' + op.length + ' ' + L('open tasks', 'مهام مفتوحة') + (late ? ' · ' + late + ' ' + L('overdue', 'متأخرة') : '') + '</p>';
   }
+  /* ---------- monthly scope: promised vs delivered ---------- */
+  function ymNow() { return ymd(new Date()).slice(0, 7); }
+  function scopeBlock(c) {
+    var mm = ymNow(), all = (D.retainers || []).filter(function (r) { return r.client_id === c.id; });
+    var cur = all.filter(function (r) { return r.month === mm; }), prev = all.filter(function (r) { return r.month !== mm; });
+    var mgr = isMgr();
+    var h = '<h2>' + L('Monthly scope', 'سكوب الشهر') + '</h2>';
+    if (!cur.length && !prev.length && !mgr) return h + '<div class="calnone">' + L('No scope set yet.', 'لسه مفيش سكوب.') + '</div>';
+    h += cur.map(function (r) { var pr = Number(r.promised) || 0, dl = Number(r.delivered) || 0, pc = pr ? Math.min(100, Math.round(dl * 100 / pr)) : 0; return '<div class="scrow' + (dl >= pr && pr ? ' full' : '') + '"><div class="sct"><b>' + esc(r.label) + '</b><span>' + dl + ' / ' + pr + '</span></div><i class="scbar"><u style="width:' + pc + '%"></u></i>' + (mgr || membersOf(c.id).some(function (p) { return p.id === me.id; }) ? '<div class="scbt"><button type="button" class="chip" data-scd="' + r.id + ':-1">−1</button><button type="button" class="chip" data-scd="' + r.id + ':1">+1</button>' + (mgr ? '<button type="button" class="chip" data-scx="' + r.id + '">×</button>' : '') + '</div>' : '') + '</div>'; }).join('');
+    if (!cur.length && prev.length && mgr) h += '<button class="btn ghost" id="scnew">' + L('Start this month from last month', 'ابدأ الشهر من الشهر اللي فات') + '</button>';
+    if (!cur.length && !prev.length) h += '<div class="calnone">' + L('No scope set yet.', 'لسه مفيش سكوب.') + '</div>';
+    if (mgr) h += '<div class="two" style="margin-top:8px"><input id="fsl" placeholder="' + L('e.g. Instagram posts', 'مثلا: بوستات انستجرام') + '"><input id="fsp" type="number" inputmode="numeric" min="1" placeholder="' + L('Per month', 'في الشهر') + '"></div><button class="btn" id="scadd" style="margin-top:8px">' + L('Add to scope', 'ضيف للسكوب') + '</button>';
+    return h;
+  }
+  function bindScope(c, reopen) {
+    var mm = ymNow();
+    var add = $('#scadd'); if (add) add.onclick = function () { var l = f('#fsl').trim(), n = parseInt(f('#fsp'), 10); if (!l) return $('#fsl').focus(); if (!(n > 0)) return $('#fsp').focus(); act(function () { return Store.insert('retainers', { client_id: c.id, month: mm, label: l.slice(0, 60), promised: n, delivered: 0 }); }).then(function () { reopen(true); }); };
+    var nw = $('#scnew'); if (nw) nw.onclick = function () { var last = (D.retainers || []).filter(function (r) { return r.client_id === c.id; }).sort(function (a, b) { return b.month.localeCompare(a.month); }); var lm = last[0] && last[0].month; var rows = last.filter(function (r) { return r.month === lm; }); act(function () { return Promise.all(rows.map(function (r) { return Store.insert('retainers', { client_id: c.id, month: mm, label: r.label, promised: r.promised, delivered: 0 }); })); }).then(function () { reopen(true); }); };
+    [].slice.call(document.querySelectorAll('#sheetin [data-scd]')).forEach(function (b) { b.onclick = function () { var p = b.dataset.scd.split(':'), r = D.retainers.filter(function (x) { return x.id === p[0]; })[0]; if (!r) return; var v = Math.max(0, (Number(r.delivered) || 0) + Number(p[1])); act(function () { return Store.update('retainers', r.id, { delivered: v }); }).then(function () { reopen(true); }); }; });
+    [].slice.call(document.querySelectorAll('#sheetin [data-scx]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('retainers', b.dataset.scx); }).then(function () { reopen(true); }); }; });
+  }
   function payBlock(c) {
     if (!isMgr()) return '';
     var vs = D.invoices.filter(function (v) { return v.client_id === c.id; }).sort(function (a, b) { return (a.status === 'paid') - (b.status === 'paid') || (a.due_date || '9').localeCompare(b.due_date || '9'); });
@@ -590,11 +611,12 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      teamBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + scopeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
     bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    bindScope(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindPay(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     var na = $('#cnadd'); if (na) { var gon = function () { var v = f('#fcn').trim(); if (!v) return; act(function () { return Store.insert('client_notes', { client_id: id, body: v.slice(0, 600) }); }).then(function () { var y = $('#sheet').scrollTop; clientDetail(id); $('#sheet').scrollTop = y; }); }; na.onclick = gon; $('#fcn').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gon(); } }; }
     [].slice.call(document.querySelectorAll('#sheetin [data-cndel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('client_notes', b.dataset.cndel); }).then(function () { clientDetail(id); }); }; });
