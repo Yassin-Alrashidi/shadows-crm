@@ -342,10 +342,9 @@ html:not([data-theme=dark]) body{background:#fff!important}
 .payk{grid-template-columns:1fr 1fr!important}
 .payk .kpi b{font-size:20px!important;white-space:nowrap}
 .payrow .m{display:flex;flex-wrap:wrap;gap:4px 10px}
-/* v87: one owl asset; in light theme it sits on the dark ground it was made for, so it looks the same as in dark */
+/* v88: one owl cutout asset, same in both themes */
 html .authwings,html .bootin img.wings{opacity:1!important}
-html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{background:#0E0E10;border-radius:28px;filter:none!important}
-html[data-theme=light] .authwings{box-sizing:border-box;width:min(340px,92%)}
+html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{filter:none!important}
 /* v87: payments row spacing */
 .payrow .m{align-items:center;gap:6px 12px}
 .payrow .m span+span{position:relative}
