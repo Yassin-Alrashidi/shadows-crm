@@ -5,6 +5,9 @@
   var CFG = window.CRM_CONFIG || {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var ORDER = ['home', 'tasks', 'attend', 'leaves', 'clients', 'expenses', 'assets', 'resign', 'me'];
+  /* wheel order: Home sits in the middle, next pages go right, previous pages go left */
+  var DIALORD = ['expenses', 'assets', 'resign', 'me', 'home', 'tasks', 'attend', 'leaves', 'clients'];
+  function DI(oi) { return DIALORD.indexOf(ORDER[oi]); }
   var me = null, profiles = [], D = { tasks: [], task_comments: [], attendance: [], notifications: [], decisions: [], task_ack: [], stars: [], broadcasts: [], leaves: [], resignations: [], clients: [], expenses: [], assets: [], client_members: [] };
   var cur = 0, dial = null, scope = 'mine', filters = { tasks: 'all', leaves: 'all', clients: 'all', q: '' };
   var isMgr = function () { return me && (me.role === 'admin' || me.role === 'manager'); };
@@ -329,18 +332,30 @@
     $('#addb').hidden = !QUICK[id]; bell();
     if (old) {
       if (dir && dir !== 'open' && old.animate) {
-        var x = dir * 60; old.style.pointerEvents = 'none';
-        old.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(' + (-x) + 'px)', opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }).onfinish = function () { old.remove(); };
+        var x = dir * 60; old.style.pointerEvents = 'none'; var st0 = old.style.transform || 'none', op0 = old.style.opacity || 1; old.style.transform = ''; old.style.opacity = '';
+        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translateX(' + (-x) + 'px)', opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }).onfinish = function () { old.remove(); };
         p.animate([{ transform: 'translateX(' + x + 'px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1)' });
       } else old.remove();
     } else if (dir === 'open' && p.animate) p.animate([{ transform: 'scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
   }
+  /* live drag: the page under the lens leans with the finger while the wheel turns */
+  function dragFollow(f) {
+    var pn = [].slice.call(document.querySelectorAll('#stage .panel')).pop(); if (!pn) return; pn.style.pointerEvents = 'none';
+    var k = Math.max(-1, Math.min(1, f)); pn.style.transition = 'none'; pn.style.transform = 'translateX(' + (-k * 90).toFixed(1) + 'px)'; pn.style.opacity = (1 - Math.abs(k) * .45).toFixed(2);
+  }
+  function dragRelease() {
+    [].slice.call(document.querySelectorAll('#stage .panel')).forEach(function (pn) {
+      if (!pn.style.transform || pn.style.pointerEvents === '' ) return;
+      var st = pn.style.transform, op = pn.style.opacity || 1; pn.style.transform = ''; pn.style.opacity = ''; pn.style.pointerEvents = '';
+      if (pn.animate) pn.animate([{ transform: st, opacity: op }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1)' });
+    });
+  }
   function openPanel(anim) { inPanel = true; document.body.classList.add('inpanel'); render(anim || 'open'); }
-  function showHub() { cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(0); }
+  function showHub() { cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(DI(0)); }
   
   function goto(i, dir) {
-    if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(i); return; }
-    if (i === cur) return; var d = dir || (i > cur ? 1 : -1); cur = i; render(d); if (dial) dial.set(i);
+    if (!inPanel) { cur = i; openPanel('open'); if (dial) dial.set(DI(i)); return; }
+    if (i === cur) return; var d = dir || (DI(i) > DI(cur) ? 1 : -1); cur = i; render(d); if (dial) dial.set(DI(i));
   }
 
   /* ---------- intro: poster owl, tap to move in until the eye becomes the lens ---------- */
@@ -364,7 +379,7 @@
     $('#introbrand').style.opacity = s === 0 ? 1 : 0;
   }
   function startIntro() {
-    document.body.classList.remove('intro'); cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(0);
+    document.body.classList.remove('intro'); cur = 0; inPanel = true; document.body.classList.add('inpanel'); render('open'); if (dial) dial.set(DI(0));
   }
   $('#intro').onclick = function () {
     if (intro.step >= intro.N) return; intro.step++; owlXf(intro.step, true); introHint();
@@ -581,7 +596,7 @@
 
   function toggleAttend() { var open = D.attendance.filter(function (r) { return r.user_id === me.id && !r.check_out; })[0]; act(function () { return open ? Store.update('attendance', open.id, { check_out: new Date().toISOString() }) : Store.insert('attendance', {}); }, open ? 'att.bye' : 'att.hi'); }
   function quickAdd() { var id = ORDER[cur]; if (id === 'tasks') newTask(); else if (id === 'leaves') newLeave(); else if (id === 'clients') clientForm(); else if (id === 'resign') newResign(); else if (id === 'expenses') newExpense(); else if (id === 'assets') newAsset(); }
-  function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); buildMenu(); if (dial) dial.set(cur); } }
+  function toggleLang() { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); chrome(); if (me) { render(0); buildMenu(); if (dial) dial.set(DI(cur)); } }
   function chrome() { applyText(); if (window.__theme) window.__theme(document.documentElement.getAttribute('data-theme') || 'light'); $('#applang').textContent = T('lang'); $('#authlang').textContent = T('lang'); setAuthMode(authMode); var d = $('#demobar'); $('#bellt').textContent = T('bell'); $('#mout2').textContent = T('logout'); if (Store.mode === 'demo' && me) { d.hidden = false; d.innerHTML = '<span>' + T('demo.bar') + '</span><button id="dreset">' + T('demo.reset') + '</button>'; $('#dreset').onclick = function () { Store.resetDemo(); location.reload(); }; } else d.hidden = true; }
   function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crm.theme', t); } catch (e) {} [].forEach.call(document.querySelectorAll('meta[name=theme-color]'), function (m) { m.removeAttribute('media'); m.setAttribute('content', t === 'dark' ? '#0E0E10' : '#FFFFFF'); }); var b = $('#apptheme'); if (b) b.textContent = t === 'dark' ? (I18N.lang === 'ar' ? 'الوضع الفاتح' : 'Light mode') : (I18N.lang === 'ar' ? 'الوضع الليلي' : 'Dark mode'); }
   $('#apptheme').onclick = function () { theme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); };
@@ -607,9 +622,9 @@
     try { localStorage.setItem('crm.entered', '1'); } catch (e) {}
     $('#auth').hidden = true; $('#app').hidden = false; cur = 0; inPanel = false; document.body.classList.remove('inpanel'); $('#stage').innerHTML = '';
     me = Store.me() || me; await load(); me = (profiles.filter(function (p) { return p.id === me.id; })[0]) || me; chrome();
-    var items = ORDER.map(function (id) { return { id: id, label: function () { return T(id); }, sub: function () { return id === 'home' ? '' : id === 'me' ? T('profile') : T('dial.tap'); } }; });
-    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: 0, onCommit: function (i, d) { var was = cur; cur = i; openPanel(was === i ? 'open' : d); }, onTap: function () { openPanel('open'); } });
-    else dial.set(0);
+    var items = DIALORD.map(function (id) { return { id: id, label: function () { return T(id); }, sub: function () { return id === 'home' ? '' : id === 'me' ? T('profile') : T('dial.tap'); } }; });
+    if (!dial) dial = Dial({ el: $('#dial'), items: items, index: DI(0), onCommit: function (i, d) { var was = cur; cur = ORDER.indexOf(DIALORD[i]); openPanel(was === cur ? 'open' : d); }, onTap: function () { openPanel('open'); }, onDrag: dragFollow, onDragEnd: dragRelease });
+    else dial.set(DI(0));
     eyeState();
     if (Store.mode === 'live' && !enter.poll) enter.poll = setInterval(function () {
       if (!me || document.visibilityState !== 'visible') return;
@@ -619,7 +634,7 @@
         else { D.notifications = rows; bell(); }
       }).catch(function () {});
     }, 20000);
-    $('#dialhint').textContent = T('dial.hint'); dial.set(0); buildMenu(); startIntro(); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
+    $('#dialhint').textContent = T('dial.hint'); dial.set(DI(0)); buildMenu(); startIntro(); setTimeout(function () { $('#dialhint').textContent = ''; }, 6000);
   }
 
   /* ---------- boot ---------- */

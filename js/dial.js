@@ -108,18 +108,18 @@
       var a = ang(e), dd = a - aPrev; if (dd > 180) dd -= 360; if (dd < -180) dd += 360; aPrev = a; aAcc += dd;
       if (!moved && Math.abs(aAcc) < 4 && Math.abs(e.clientX - sx) < 6) return; moved = true;
       lean(Math.max(-6, Math.min(6, (e.clientX - sx) / 10)));
-      var deg = Math.max(-8, Math.min((n - 1) * STEP + 8, startRot + aAcc * GAIN)); put(deg, false);
+      var deg = Math.max(-8, Math.min((n - 1) * STEP + 8, startRot + aAcc * GAIN)); put(deg, false); if (o.onDrag) o.onDrag((deg - cur * STEP) / STEP);
       var c = Math.max(0, Math.min(n - 1, Math.round(deg / STEP)));
       if (c !== cand) { cand = c; mark(c); say(c, true); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (x) {} } }
     });
     function end() {
       if (!dragging) return; dragging = false; lean(0); el.classList.remove('turning');
-      if (moved) { commit(cand); say(cand, true); closeSoon(700); return; }
+      if (moved) { commit(cand); say(cand, true); closeSoon(700); if (o.onDragEnd) o.onDragEnd(); return; }
       var b = downT && downT.closest ? downT.closest('.wi') : null;
       if (b) { commit(+b.dataset.i); say(+b.dataset.i, true); closeSoon(700); } else closeSoon(1400);
     }
     el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); el.classList.remove('turning'); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); closeSoon(300); } });
+    el.addEventListener('pointercancel', function () { if (dragging) { dragging = false; lean(0); el.classList.remove('turning'); put(cur * STEP, true); mark(cur); lab.classList.remove('on'); closeSoon(300); if (o.onDragEnd) o.onDragEnd(); } });
     el.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); var i = Math.max(0, Math.min(n - 1, cur + d)); if (i !== cur) commit(i); } });
     return { set: function (i) { cur = i; cand = i; mark(i); put(i * STEP, true); }, caption: function () {}, icon: icon, fx: function () { if (el.animate) el.animate([{ opacity: 1 }, { opacity: .7, offset: .5 }, { opacity: 1 }], { duration: 900 }); }, setLid: function (a) { lids(a || 0); } };
   };
