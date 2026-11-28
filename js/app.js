@@ -238,7 +238,7 @@
     var po = { urgent: 0, high: 1, normal: 2, low: 3 };
     rows.sort(function (a, b) { return (a.status === 'done') - (b.status === 'done') || po[a.priority] - po[b.priority] || (a.due_date || '9').localeCompare(b.due_date || '9'); });
     var h = '<h1>' + T('tasks') + '</h1>' + scopeBar() + chipBar('tasks', ['todo', 'in_progress', 'done'], 'st.');
-    h += rows.length ? '<div class="board">' + rows.map(function (t, k) { var late = isLate(t), soon = isSoon(t); return '<button class="item note ' + (late ? 'nr' : t.status === 'done' ? 'ng' : t.status === 'in_progress' ? 'nb2' : 'ny') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div>' + (t.description ? '<p class="nd">' + esc(String(t.description).slice(0, 70)) + '</p>' : '') + '<div class="m">' + pill(t.status, T('st.' + t.status)) + (late ? pill('urgent', T('overdue')) : soon ? pill('high', T('soon')) : '') + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div>' + (t.client_id || (isMgr() && scope === 'all' && t.assigned_to) ? '<div class="nf">' + (t.client_id ? '<span class="ncl">' + esc(clientName(t.client_id)) + '</span>' : '') + (isMgr() && scope === 'all' && t.assigned_to ? '<span>' + esc((nameOf(t.assigned_to) || '').split(' ')[0]) + '</span>' : '') + '</div>' : '') + '</button>'; }).join('') + '</div>' : EMPTY();
+    h += rows.length ? '<div class="board">' + rows.map(function (t, k) { var late = isLate(t), soon = isSoon(t); return '<button class="item note ' + (late ? 'nr' : t.status === 'done' ? 'ng' : t.status === 'in_progress' ? 'nb2' : 'ny') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div>' + (t.description ? '<p class="nd">' + esc(String(t.description).slice(0, 70)) + '</p>' : '') + '<div class="m">' + pill(t.status, T('st.' + t.status)) + (late ? pill('urgent', T('overdue')) : soon ? pill('high', T('soon')) : '') + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + ckChip(t) + '</div>' + (t.client_id || (isMgr() && scope === 'all' && t.assigned_to) ? '<div class="nf">' + (t.client_id ? '<span class="ncl">' + esc(clientName(t.client_id)) + '</span>' : '') + (isMgr() && scope === 'all' && t.assigned_to ? '<span>' + esc((nameOf(t.assigned_to) || '').split(' ')[0]) + '</span>' : '') + '</div>' : '') + '</button>'; }).join('') + '</div>' : EMPTY();
     return h;
   };
   function hm(s) { return new Date(s).toLocaleTimeString(I18N.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', { hour: '2-digit', minute: '2-digit' }); }
@@ -421,18 +421,43 @@
       if (ok) { closeSheet(); goto(ORDER.indexOf('tasks')); }
     };
   }
+  /* ---------- checklist and links on a task ---------- */
+  function ckChip(t) { var c = t.checklist || []; if (!c.length) return ''; var d = c.filter(function (x) { return x.d; }).length; return '<span class="ckchip">' + d + '/' + c.length + '</span>'; }
+  function goodUrl(u) { return /^https?:\/\/[^\s]+\.[^\s]+/i.test(u); }
+  function checklistBlock(t, can) {
+    var ck = t.checklist || [], d = ck.filter(function (x) { return x.d; }).length;
+    return '<h2>' + L('Checklist', 'الخطوات') + (ck.length ? ' · ' + d + '/' + ck.length : '') + '</h2>' + (ck.length ? '<div class="bar"><i style="width:' + Math.round(d / ck.length * 100) + '%"></i></div>' : '') +
+      '<div id="cklist">' + ck.map(function (x, i) { return '<button type="button" class="ckrow' + (x.d ? ' on' : '') + '" data-ck="' + i + '"' + (can ? '' : ' disabled') + '><i></i><span>' + esc(x.t) + '</span></button>'; }).join('') + '</div>' +
+      (can ? '<div class="row" style="margin-top:8px"><input id="fck" placeholder="' + L('Add a step', 'ضيف خطوة') + '"><button class="btn" id="ckadd">+</button></div>' : '') + (ck.length ? '' : '<div class="calnone">' + L('No steps yet.', 'مفيش خطوات لسه.') + '</div>');
+  }
+  function linksBlock(t, can) {
+    var lk = t.links || [];
+    return '<h2>' + L('Links', 'الروابط') + '</h2>' + (lk.length ? lk.map(function (x, i) { return '<div class="lkrow"><a href="' + esc(x.u) + '" target="_blank" rel="noopener"><b>' + esc(x.n || x.u) + '</b><small dir="ltr">' + esc(x.u.replace(/^https?:\/\//, '').slice(0, 42)) + '</small></a>' + (can ? '<button type="button" class="lkdel" data-lkdel="' + i + '" aria-label="' + T('delete') + '">×</button>' : '') + '</div>'; }).join('') : '<div class="calnone">' + L('No links yet.', 'مفيش روابط لسه.') + '</div>') +
+      (can ? '<div class="two" style="margin-top:8px"><input id="fln" placeholder="' + L('Name', 'الاسم') + '"><input id="flu" dir="ltr" placeholder="https://"></div><button class="btn" id="lkadd" style="margin-top:8px">' + L('Add link', 'ضيف رابط') + '</button>' : '');
+  }
+  function bindTaskExtras(t, id, can, reopen) {
+    if (!can) return;
+    var save = function (patch) { return act(function () { return Store.update('tasks', id, patch); }); };
+    [].slice.call(document.querySelectorAll('#sheetin [data-ck]')).forEach(function (b) {
+      b.onclick = function () { var i = +b.dataset.ck, ck = (t.checklist || []).map(function (x) { return { t: x.t, d: x.d }; }); ck[i].d = !ck[i].d; t.checklist = ck; b.classList.toggle('on', ck[i].d); save({ checklist: ck }).then(function () { reopen(true); }); };
+    });
+    var add = $('#ckadd'); if (add) { var go = function () { var v = f('#fck').trim(); if (!v) return; var ck = (t.checklist || []).concat([{ t: v.slice(0, 120), d: false }]); save({ checklist: ck }).then(function () { reopen(true); }); }; add.onclick = go; $('#fck').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } }; }
+    [].slice.call(document.querySelectorAll('#sheetin [data-lkdel]')).forEach(function (b) { b.onclick = function () { var lk = (t.links || []).slice(); lk.splice(+b.dataset.lkdel, 1); save({ links: lk }).then(function () { reopen(true); }); }; });
+    var la = $('#lkadd'); if (la) la.onclick = function () { var u = f('#flu').trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (!goodUrl(u)) { toast(T('a.badurl')); return $('#flu').focus(); } var lk = (t.links || []).concat([{ n: f('#fln').trim().slice(0, 60), u: u }]); save({ links: lk }).then(function () { reopen(true); }); };
+  }
   function taskDetail(id) {
     var t = D.tasks.filter(function (x) { return x.id === id; })[0]; if (!t) return;
     var cm = D.task_comments.filter(function (c) { return c.task_id === id; }).sort(function (a, b) { return a.created_at.localeCompare(b.created_at); });
     var canSt = isMgr() || t.assigned_to === me.id || t.created_by === me.id;
     var members = profiles.filter(function (p) { return p.id !== t.created_by; });
     var team = t.team ? '<div class="ack">' + members.map(function (p) { return '<span class="' + (acked(t, p.id) ? 'y' : '') + '">' + (acked(t, p.id) ? '✓ ' : '') + esc(p.name || p.email) + '</span>'; }).join('') + '</div>' + (t.created_by !== me.id && !acked(t, me.id) ? '<button class="btn ok" id="ack" style="width:100%;margin-bottom:10px">' + T('ack.mine') + '</button>' : '') : '';
-    openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (t.client_id ? '<button class="pill" data-client="' + t.client_id + '">' + esc(clientName(t.client_id)) + '</button>' : '') + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (isLate(t) ? pill('urgent', T('overdue')) : '') + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + ' · ' + (t.team ? T('whole') : t.assigned_to ? T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' + team +
+    openSheet('<h2>' + esc(t.title) + '</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (t.client_id ? '<button class="pill" data-client="' + t.client_id + '">' + esc(clientName(t.client_id)) + '</button>' : '') + pill(t.status, T('st.' + t.status)) + pill(t.priority, T('pr.' + t.priority)) + (isLate(t) ? pill('urgent', T('overdue')) : '') + '</div><p style="color:var(--ash)">' + T('from.admin') + ': ' + esc(nameOf(t.created_by)) + ' · ' + (t.team ? T('whole') : t.assigned_to ? T('to') + ': ' + esc(nameOf(t.assigned_to)) : '') + (t.due_date ? ' · ' + I18N.date(t.due_date) : '') + '</p><p>' + esc(t.description) + '</p>' + team + checklistBlock(t, canSt) + linksBlock(t, canSt) +
       '<div id="vlist"></div>' + voiceBox('vb2') +
       (canSt ? '<label class="fld"><span>' + T('f.status') + '</span><select id="fs">' + options(['todo', 'in_progress', 'done'], 'st.', t.status) + '</select></label>' : '') +
       '<h2>' + T('comments') + '</h2>' + (cm.length ? cm.map(function (c) { return '<div class="cm"><small>' + esc(nameOf(c.user_id)) + ' · ' + I18N.ago(c.created_at) + '</small><div>' + esc(c.body) + '</div></div>'; }).join('') : '<div class="empty" style="padding:8px">' + T('none') + '</div>') +
       '<div class="row" style="margin-top:10px"><input id="fcm" placeholder="' + T('comment.ph') + '"><button class="btn" id="cmok">' + T('send') + '</button></div>' + (isMgr() ? '<button class="btn ghost danger" id="tdel">' + T('delete') + '</button>' : ''));
     var others = function () { return [t.created_by, t.assigned_to].concat(t.team ? allIds() : []); };
+    bindTaskExtras(t, id, canSt, function (keep) { var y = $('#sheet').scrollTop; taskDetail(id); if (keep) $('#sheet').scrollTop = y; });
     Store.where('voice_notes', 'task_id', id).then(function (rows) {
       var box = $('#vlist'); if (!box || !rows.length) return;
       box.innerHTML = '<h2>' + T('voice.h') + '</h2>';
