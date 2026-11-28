@@ -197,8 +197,8 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries', 'content_items'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers' || n === 'time_entries' || n === 'content_items') return []; throw e; }); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices', 'retainers', 'time_entries', 'content_items', 'meeting_notes'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices' || n === 'retainers' || n === 'time_entries' || n === 'content_items' || n === 'meeting_notes') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
     autoStop();
   }
@@ -437,6 +437,18 @@
   }
   function openMenu() { buildMenu(); $('#menu').classList.add('on'); $('#menubg').classList.add('on'); }
   function closeMenu() { $('#menu').classList.remove('on'); $('#menubg').classList.remove('on'); }
+  /* ---------- meeting notes ---------- */
+  function meetBlock(c) {
+    var rows = (D.meeting_notes || []).filter(function (x) { return x.client_id === c.id; }).sort(function (a, b) { return String(b.meeting_date || b.created_at || '').localeCompare(String(a.meeting_date || a.created_at || '')); });
+    return '<h2>' + L('Meeting notes', 'ملاحظات الاجتماعات') + (rows.length ? ' · ' + rows.length : '') + '</h2>' +
+      (rows.length ? rows.slice(0, 10).map(function (x) { var acts = x.actions || []; return '<div class="payrow mtg"><div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (x.meeting_date ? '<span>' + I18N.date(x.meeting_date) + '</span>' : '') + '</div>' + (x.body ? '<p class="nd">' + esc(x.body) + '</p>' : '') + acts.map(function (a, i) { return '<div class="mact"><span>' + esc(a.t) + '</span>' + (a.task_id ? '<em>' + L('Task made', 'اتعمل تاسك') + '</em>' : '<button type="button" class="chip on" data-mk="' + x.id + ':' + i + '">' + L('Make task', 'اعمله تاسك') + '</button>') + '</div>'; }).join('') + '</div><button type="button" class="lkdel" data-mdel="' + x.id + '" aria-label="' + T('delete') + '">×</button></div>'; }).join('') : '<div class="calnone">' + L('No meetings logged yet.', 'مفيش اجتماعات متسجلة لسه.') + '</div>') +
+      '<div class="two" style="margin-top:8px"><input id="fmt" placeholder="' + L('Meeting title', 'عنوان الاجتماع') + '"><input id="fmd" type="date"></div><textarea id="fmb" style="margin-top:8px" placeholder="' + L('What was said', 'اللي اتقال') + '"></textarea><textarea id="fma" style="margin-top:8px" placeholder="' + L('Action items, one per line', 'المطلوب، كل بند في سطر') + '"></textarea><button class="btn" id="madd" style="margin-top:8px">' + L('Save meeting', 'احفظ الاجتماع') + '</button>';
+  }
+  function bindMeet(c, reopen) {
+    var add = $('#madd'); if (add) add.onclick = function () { var t = f('#fmt').trim(); if (!t) return $('#fmt').focus(); var acts = f('#fma').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 20).map(function (x) { return { t: x.slice(0, 120) }; }); act(function () { return Store.insert('meeting_notes', { client_id: c.id, title: t.slice(0, 100), meeting_date: f('#fmd') || null, body: f('#fmb').slice(0, 1000), actions: acts }); }).then(function () { reopen(true); }); };
+    [].slice.call(document.querySelectorAll('#sheetin [data-mk]')).forEach(function (b) { b.onclick = function () { var q = b.dataset.mk.split(':'), x = D.meeting_notes.filter(function (r) { return r.id === q[0]; })[0]; if (!x) return; var acts = (x.actions || []).slice(); var a = acts[+q[1]]; if (!a || a.task_id) return; act(async function () { var r = await Store.insert('tasks', { title: a.t, assigned_to: me.id, team: false, priority: 'normal', due_date: null, description: L('From meeting: ', 'من اجتماع: ') + x.title, status: 'todo', client_id: c.id }); acts[+q[1]] = { t: a.t, task_id: r.id }; return Store.update('meeting_notes', x.id, { actions: acts }); }, 'sent').then(function () { reopen(true); }); }; });
+    [].slice.call(document.querySelectorAll('#sheetin [data-mdel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('meeting_notes', b.dataset.mdel); }).then(function () { reopen(true); }); }; });
+  }
   $('#burger').onclick = openMenu; $('#menuclose').onclick = closeMenu; $('#menubg').onclick = closeMenu;
   $('#menulist').onclick = function (e) { var b = e.target.closest('[data-mi]'); if (!b) return; closeMenu(); goto(+b.dataset.mi); };
   $('#mout2').onclick = function () { closeMenu(); logout(); };
@@ -664,11 +676,12 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      teamBlock(c) + scopeBlock(c) + contentBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + scopeBlock(c) + contentBlock(c) + meetBlock(c) + clientTimeBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
     bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    bindMeet(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindContent(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindScope(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     bindPay(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });

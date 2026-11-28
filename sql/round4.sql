@@ -102,3 +102,23 @@ create policy "ci read" on public.content_items for select to authenticated usin
 create policy "ci write" on public.content_items for insert to authenticated with check (user_id = auth.uid());
 create policy "ci update" on public.content_items for update to authenticated using (true) with check (true);
 create policy "ci delete" on public.content_items for delete to authenticated using (user_id = auth.uid() or public.is_manager());
+
+create table if not exists public.meeting_notes (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients(id) on delete cascade,
+  user_id uuid references auth.users(id),
+  title text not null,
+  meeting_date date,
+  body text,
+  actions jsonb not null default '[]',
+  created_at timestamptz not null default now()
+);
+alter table public.meeting_notes enable row level security;
+drop policy if exists "mn read" on public.meeting_notes;
+drop policy if exists "mn write" on public.meeting_notes;
+drop policy if exists "mn update" on public.meeting_notes;
+drop policy if exists "mn delete" on public.meeting_notes;
+create policy "mn read" on public.meeting_notes for select to authenticated using (true);
+create policy "mn write" on public.meeting_notes for insert to authenticated with check (user_id = auth.uid());
+create policy "mn update" on public.meeting_notes for update to authenticated using (true) with check (true);
+create policy "mn delete" on public.meeting_notes for delete to authenticated using (user_id = auth.uid() or public.is_manager());

@@ -374,3 +374,11 @@ html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{filte
 .payrow.cnt .chip{flex:none;padding:5px 12px!important;min-height:0!important;font-size:12px!important}
 .payrow.cnt.late .m span:nth-child(2){color:#E11827}
 .payrow.cnt .chip{background:var(--soft)!important;color:var(--fg)!important;border-radius:99px!important;text-transform:none!important;letter-spacing:.02em!important;font-weight:800}
+
+/* v98 meeting notes */
+.payrow.mtg{align-items:flex-start}
+.payrow.mtg .nd{margin:6px 0 4px;opacity:.75;font-size:13px;white-space:pre-wrap}
+.mact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;font-size:14px;font-weight:600}
+.mact em{font-style:normal;font-size:12px;opacity:.55;font-weight:800;white-space:nowrap}
+.mact .chip{flex:none;border-radius:99px!important;text-transform:none!important}
+.mact .chip{background:var(--soft)!important;color:var(--fg)!important;letter-spacing:.02em!important;font-weight:800;padding:8px 14px}
