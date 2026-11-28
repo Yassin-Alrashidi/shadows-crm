@@ -166,7 +166,7 @@
     openSheet('<h2>' + esc(p.name) + '</h2>' + (curStar() && curStar().user_id === uid ? '<div class="starcard"><img src="assets/owl-head.webp" alt=""><div><small>' + T('star.badge') + '</small></div></div>' : '') + '<p class="sub" dir="ltr" style="text-align:start">' + esc(p.email) + ' · ' + T('role.' + p.role) + '</p>' +
       (isMgr() ? '<label class="fld"><span>' + T('team.of') + '</span><select data-team="' + uid + '">' + ['']. concat(TEAMS).map(function (tm) { return '<option value="' + tm + '"' + ((p.team || '') === tm ? ' selected' : '') + '>' + teamLabel(tm) + '</option>'; }).join('') + '</select></label>' : (p.team ? '<p class="sub">' + teamLabel(p.team) + '</p>' : '')) +
       (me.role === 'admin' && uid !== me.id ? '<h2>' + L('Access', 'الصلاحيات') + '</h2><div class="chips">' + ['employee', 'manager', 'admin'].map(function (r) { return '<button class="' + (p.role === r ? 'on' : '') + '" data-setrole="' + uid + ':' + r + '">' + T('role.' + r) + '</button>'; }).join('') + '</div><p class="m" style="color:var(--mut);margin:8px 0 0">' + L('Employee: own tasks, leaves and expenses. Manager: also approves requests, runs the team and clients. Admin: everything, including roles.', 'موظف: مهامه وإجازاته ومصروفاته. مدير: كمان بيوافق على الطلبات وبيدير الفريق والعملاء. أدمن: كل حاجة، ومعاها الصلاحيات.') + '</p>' : '') +
-      '<h2>' + T('prof.clients') + '</h2>' + (isMgr() ? '<div class="pick">' + D.clients.filter(function (c) { return c.status !== 'closed'; }).map(function (c) { var on = D.client_members.some(function (m) { return m.client_id === c.id && m.user_id === uid; }); return '<button class="pk' + (on ? ' on' : '') + '" data-cmp="' + c.id + ':' + uid + '"><span>' + esc(c.name) + '</span></button>'; }).join('') + '</div>' : D.client_members.filter(function (m) { return m.user_id === uid; }).map(function (m) { return pill('active', clientName(m.client_id)); }).join('')) +
+      '<h2>' + T('prof.clients') + '</h2>' + workLine(uid) + (isMgr() ? '<div class="pick">' + D.clients.filter(function (c) { return c.status !== 'closed'; }).map(function (c) { var on = D.client_members.some(function (m) { return m.client_id === c.id && m.user_id === uid; }); return '<button class="pk' + (on ? ' on' : '') + '" data-cmp="' + c.id + ':' + uid + '"><span>' + esc(c.name) + '</span></button>'; }).join('') + '</div>' : D.client_members.filter(function (m) { return m.user_id === uid; }).map(function (m) { return pill('active', clientName(m.client_id)); }).join('')) +
       '<div class="two3" style="margin-top:14px"><div class="kpi"><b>' + done.length + '</b><span>' + T('prof.done') + '</span></div><div class="kpi"><b>' + open.length + '</b><span>' + T('prof.open2') + '</span></div><div class="kpi red"><b>' + late.length + '</b><span>' + T('prof.late') + '</span></div></div>' +
       '<div class="card"><div class="row"><b>' + T('prof.leave') + '</b><span>' + Math.max(0, tot - used) + ' ' + T('balance.of') + ' ' + tot + '</span></div><div class="bar"><i style="width:' + Math.min(100, used / tot * 100) + '%"></i></div></div>' +
       '<div class="card"><b>' + T('prof.att') + '</b><div class="m" style="margin-top:6px;color:var(--ash)">' + Object.keys(days).length + ' ' + T('prof.days') + ' · ' + hoursOf(att).toFixed(1) + ' ' + T('prof.hours') + '</div></div>' +
@@ -463,6 +463,17 @@
   }
   /* ---------- payments tracker on a client (managers only) ---------- */
   function invState(v) { return v.status === 'paid' ? 'paid' : (v.due_date && v.due_date < ymd(new Date()) ? 'late' : 'due'); }
+  function teamBlock(c) {
+    var ms = membersOf(c.id);
+    var rows = ms.map(function (p) { var n = D.tasks.filter(function (t) { return t.client_id === c.id && t.assigned_to === p.id && t.status !== 'done'; }).length; return '<div class="payrow"><div><div class="t">' + esc(p.name || p.email) + '</div></div><span class="paytag">' + n + ' ' + L('open', 'مفتوحة') + '</span></div>'; }).join('');
+    return '<h2>' + L('Workload on this client', 'الشغل على العميل') + '</h2>' + (rows || '<div class="calnone">' + L('No one is assigned yet.', 'لسه مفيش حد متعين.') + '</div>');
+  }
+  function workLine(uid) {
+    var cl = D.client_members.filter(function (m) { return m.user_id === uid; }).length;
+    var op = D.tasks.filter(function (t) { return t.assigned_to === uid && t.status !== 'done'; });
+    var late = op.filter(isLate).length;
+    return '<p class="sub">' + cl + ' ' + L(cl === 1 ? 'client' : 'clients', 'عملاء') + ' · ' + op.length + ' ' + L('open tasks', 'مهام مفتوحة') + (late ? ' · ' + late + ' ' + L('overdue', 'متأخرة') : '') + '</p>';
+  }
   function payBlock(c) {
     if (!isMgr()) return '';
     var vs = D.invoices.filter(function (v) { return v.client_id === c.id; }).sort(function (a, b) { return (a.status === 'paid') - (b.status === 'paid') || (a.due_date || '9').localeCompare(b.due_date || '9'); });
@@ -579,7 +590,7 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      teamBlock(c) + payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
