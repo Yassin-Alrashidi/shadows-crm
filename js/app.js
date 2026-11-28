@@ -333,10 +333,10 @@
     if (old) {
       if (dir && dir !== 'open' && old.animate) {
         /* page turn: short and snappy, small travel. New page comes from its own side (right = forward, left = back), old one steps back. Transforms and opacity only. */
-        var EASE = 'cubic-bezier(.2,.8,.2,1)', DUR = 180, st0 = old.style.transform || 'none', op0 = old.style.opacity || 1;
+        var EASE = 'cubic-bezier(.2,.8,.2,1)', DUR = 120, st0 = old.style.transform || 'none', op0 = old.style.opacity || 1;
         old.style.pointerEvents = 'none'; old.style.transform = ''; old.style.opacity = '';
         p.style.zIndex = 2; old.style.zIndex = 1;
-        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translate3d(' + (-dir * 18) + 'px,0,0)', opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { old.remove(); };
+        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translate3d(' + (-dir * 18) + 'px,0,0)', opacity: 0 }], { duration: 80, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { old.remove(); };
         var a2 = p.animate([{ transform: 'translate3d(' + (dir * 36) + 'px,0,0)', opacity: 0 }, { transform: 'translate3d(0,0,0)', opacity: 1 }], { duration: DUR, easing: EASE });
         a2.onfinish = function () { p.style.zIndex = ''; old.remove(); };
       } else old.remove();
@@ -351,7 +351,7 @@
     [].slice.call(document.querySelectorAll('#stage .panel')).forEach(function (pn) {
       if (!pn.style.transform || pn.style.pointerEvents === '' ) return;
       var st = pn.style.transform, op = pn.style.opacity || 1; pn.style.transform = ''; pn.style.opacity = ''; pn.style.pointerEvents = '';
-      if (pn.animate) pn.animate([{ transform: st, opacity: op }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1)' });
+      if (pn.animate) pn.animate([{ transform: st, opacity: op }, { transform: 'none', opacity: 1 }], { duration: 140, easing: 'cubic-bezier(.2,.9,.3,1)' });
     });
   }
   /* decode the pin and owl art once, up front, so the first page turn never waits on an image */

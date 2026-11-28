@@ -89,7 +89,7 @@ html[data-theme=dark] #dial .dome{background:#C9141F}
 /* v29: the eye is the control. Tap it, the wheel appears, turn it, release. */
 html body #dial{pointer-events:none!important}
 html body #dial.open{pointer-events:auto!important}
-#dial .dome{transform:translateY(40px) scale(.6);transform-origin:50% 100%;opacity:0;transition:transform .28s ease,opacity .2s;pointer-events:none;will-change:transform,opacity}
+#dial .dome{transform:translateY(40px) scale(.6);transform-origin:50% 100%;opacity:0;transition:transform .16s ease,opacity .12s;pointer-events:none;will-change:transform,opacity}
 #dial.open .dome{transform:none;opacity:1;pointer-events:auto}
 #dial .eyebtn{position:absolute;left:50%;bottom:calc(var(--sab) + 14px);width:92px;height:52px;margin-left:-46px;padding:0;border:0;background:transparent;color:#E11827;pointer-events:auto;-webkit-tap-highlight-color:transparent;z-index:2}
 #dial .eyebtn svg{width:100%;height:100%;display:block;overflow:visible}

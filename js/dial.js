@@ -69,8 +69,8 @@
     function shutter(opening) {
       if (!pp.animate) return;
       var base = 1 - Math.min(lidA, .72) * .5;
-      pp.animate(opening ? [{ transform: 'scale(' + base + ')' }, { transform: 'scale(.34)', offset: .35 }, { transform: 'scale(1.06)', offset: .8 }, { transform: 'scale(1)' }] : [{ transform: 'scale(1)' }, { transform: 'scale(.4)', offset: .45 }, { transform: 'scale(' + base + ')' }], { duration: opening ? 560 : 420, easing: 'cubic-bezier(.3,.8,.3,1)' });
-      bl.animate(opening ? [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.52) rotate(-28deg)', offset: .4 }, { transform: 'scale(1) rotate(-60deg)' }] : [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.6) rotate(24deg)', offset: .5 }, { transform: 'scale(1) rotate(60deg)' }], { duration: opening ? 560 : 420, easing: 'cubic-bezier(.3,.8,.3,1)' });
+      pp.animate(opening ? [{ transform: 'scale(' + base + ')' }, { transform: 'scale(.34)', offset: .35 }, { transform: 'scale(1.06)', offset: .8 }, { transform: 'scale(1)' }] : [{ transform: 'scale(1)' }, { transform: 'scale(.4)', offset: .45 }, { transform: 'scale(' + base + ')' }], { duration: opening ? 560 : 240, easing: 'cubic-bezier(.3,.8,.3,1)' });
+      bl.animate(opening ? [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.52) rotate(-28deg)', offset: .4 }, { transform: 'scale(1) rotate(-60deg)' }] : [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(.6) rotate(24deg)', offset: .5 }, { transform: 'scale(1) rotate(60deg)' }], { duration: opening ? 560 : 240, easing: 'cubic-bezier(.3,.8,.3,1)' });
     }
     function lids(a, ms) { lidA = a; var k = 1 - Math.min(a, .72) * .5; pp.style.transition = 'transform ' + (ms == null ? 500 : ms) + 'ms ease'; pp.style.transform = 'scale(' + k.toFixed(2) + ')'; }
     lids(0, 0);
@@ -85,8 +85,8 @@
     setTimeout(blink, 3500);
 
     var pvrow = el.querySelector('#pvrow'), pvt = [].slice.call(el.querySelectorAll('.pvt')), ring = el.querySelector('#eRing');
-    function pvset(deg, anim) { var pos = deg / STEP; pvrow.style.transition = anim ? 'transform .4s cubic-bezier(.25,.8,.3,1)' : 'none'; pvrow.style.transform = 'translateX(' + (-pos * 100).toFixed(1) + 'px)'; pvt.forEach(function (t, i) { var k = Math.max(0, 1 - Math.abs(i - pos)); t.style.transition = anim ? 'transform .4s, opacity .4s' : 'none'; t.style.transform = 'scale(' + (.86 + .24 * k).toFixed(3) + ')'; t.style.opacity = (.42 + .58 * k).toFixed(2); t.classList.toggle('on', k > .5); }); ring.style.transform = 'rotate(' + (deg * 2.4).toFixed(1) + 'deg)'; }
-    function put(deg, anim) { pvset(deg, anim); wheel.style.transition = anim ? 'transform .4s cubic-bezier(.25,.8,.3,1)' : 'none'; wheel.style.transform = 'translateZ(0) rotate(' + (-deg).toFixed(2) + 'deg)'; rot = deg; }
+    function pvset(deg, anim) { var pos = deg / STEP; pvrow.style.transition = anim ? 'transform .2s cubic-bezier(.25,.8,.3,1)' : 'none'; pvrow.style.transform = 'translateX(' + (-pos * 100).toFixed(1) + 'px)'; pvt.forEach(function (t, i) { var k = Math.max(0, 1 - Math.abs(i - pos)); t.style.transition = anim ? 'transform .2s, opacity .2s' : 'none'; t.style.transform = 'scale(' + (.86 + .24 * k).toFixed(3) + ')'; t.style.opacity = (.42 + .58 * k).toFixed(2); t.classList.toggle('on', k > .5); }); ring.style.transform = 'rotate(' + (deg * 2.4).toFixed(1) + 'deg)'; }
+    function put(deg, anim) { pvset(deg, anim); wheel.style.transition = anim ? 'transform .2s cubic-bezier(.25,.8,.3,1)' : 'none'; wheel.style.transform = 'translateZ(0) rotate(' + (-deg).toFixed(2) + 'deg)'; rot = deg; }
     function mark(i) { btns.forEach(function (b, k) { b.classList.toggle('on', k === i); }); }
     function say(i, on) { lab.textContent = items[i].label(); lab.classList.toggle('on', !!on); }
     function commit(i) { var dir = i > cur ? 1 : i < cur ? -1 : 0, ch = i !== cur; cur = i; cand = i; mark(i); put(i * STEP, true); lab.classList.remove('on'); if (ch) o.onCommit(i, dir); }
@@ -114,7 +114,7 @@
     });
     function end() {
       if (!dragging) return; dragging = false; lean(0); el.classList.remove('turning');
-      if (moved) { commit(cand); say(cand, true); closeSoon(260); if (o.onDragEnd) o.onDragEnd(); return; }
+      if (moved) { commit(cand); say(cand, true); closeSoon(0); if (o.onDragEnd) o.onDragEnd(); return; }
       var b = downT && downT.closest ? downT.closest('.wi') : null;
       if (b) { commit(+b.dataset.i); say(+b.dataset.i, true); closeSoon(700); } else closeSoon(1400);
     }
