@@ -332,12 +332,12 @@
     $('#addb').hidden = !QUICK[id]; bell();
     if (old) {
       if (dir && dir !== 'open' && old.animate) {
-        /* page turn: the new page slides over the old one from its own side (right = forward, left = back), the old page drifts the other way a little. Transforms only, one shared curve, both start in the same frame. */
-        var W = stage.clientWidth || 390, EASE = 'cubic-bezier(.22,1,.36,1)', DUR = 440, st0 = old.style.transform || 'none';
+        /* page turn: short and snappy, small travel. New page comes from its own side (right = forward, left = back), old one steps back. Transforms and opacity only. */
+        var EASE = 'cubic-bezier(.2,.8,.2,1)', DUR = 180, st0 = old.style.transform || 'none', op0 = old.style.opacity || 1;
         old.style.pointerEvents = 'none'; old.style.transform = ''; old.style.opacity = '';
-        p.style.willChange = 'transform'; p.style.pointerEvents = 'none'; p.style.zIndex = 2; old.style.zIndex = 1;
-        var a1 = old.animate([{ transform: st0 }, { transform: 'translate3d(' + (-dir * W * .26) + 'px,0,0)' }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        var a2 = p.animate([{ transform: 'translate3d(' + (dir * W) + 'px,0,0)' }, { transform: 'translate3d(0,0,0)' }], { duration: DUR, easing: EASE });
+        p.style.willChange = 'transform,opacity'; p.style.pointerEvents = 'none'; p.style.zIndex = 2; old.style.zIndex = 1;
+        old.animate([{ transform: st0, opacity: op0 }, { transform: 'translate3d(' + (-dir * 18) + 'px,0,0)', opacity: 0 }], { duration: 140, easing: 'ease-out', fill: 'forwards' });
+        var a2 = p.animate([{ transform: 'translate3d(' + (dir * 36) + 'px,0,0)', opacity: 0 }, { transform: 'translate3d(0,0,0)', opacity: 1 }], { duration: DUR, easing: EASE });
         a2.onfinish = function () { p.style.pointerEvents = ''; p.style.willChange = ''; p.style.zIndex = ''; old.remove(); };
       } else old.remove();
     } else if (dir === 'open' && p.animate) p.animate([{ transform: 'scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
@@ -345,7 +345,7 @@
   /* live drag: the page under the lens leans with the finger while the wheel turns */
   function dragFollow(f) {
     var pn = [].slice.call(document.querySelectorAll('#stage .panel')).pop(); if (!pn) return; pn.style.pointerEvents = 'none';
-    var k = Math.max(-1, Math.min(1, f)); pn.style.transition = 'none'; pn.style.transform = 'translate3d(' + (-k * 90).toFixed(1) + 'px,0,0)';
+    var k = Math.max(-1, Math.min(1, f)); pn.style.transition = 'none'; pn.style.transform = 'translate3d(' + (-k * 26).toFixed(1) + 'px,0,0)';
   }
   function dragRelease() {
     [].slice.call(document.querySelectorAll('#stage .panel')).forEach(function (pn) {
