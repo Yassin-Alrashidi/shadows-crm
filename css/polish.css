@@ -388,3 +388,5 @@ html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings{filte
 #dial .eyebtn::before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 6px 14px rgba(225,24,39,.35);z-index:-1;pointer-events:none;transition:opacity .15s}
 #dial.open .eyebtn::before{opacity:0}
 body.lensbusy::after{visibility:hidden}
+/* v103: light mode owl = the reference render, no outline halo (silhouette trimmed to the owl's own edge) */
+html[data-theme=light] .authwings,html[data-theme=light] .bootin img.wings,html[data-theme=light] .empty img[src*="owl-wings"]{content:url(../assets/owl-wings-light.webp)}
