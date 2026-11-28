@@ -195,8 +195,8 @@
   /* ---------- data ---------- */
   async function load() {
     profiles = await Store.profiles();
-    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes'];
-    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes') return []; throw e; }); }));
+    var names = ['tasks', 'task_comments', 'attendance', 'notifications', 'decisions', 'task_ack', 'stars', 'broadcasts', 'leaves', 'resignations', 'clients', 'expenses', 'assets', 'client_members', 'client_notes', 'invoices'];
+    var res = await Promise.all(names.map(function (n) { return Store.list(n).catch(function (e) { if (n === 'client_notes' || n === 'invoices') return []; throw e; }); }));
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
@@ -228,6 +228,7 @@
     ev.sort(function (a, b) { return (b.at || '').localeCompare(a.at || ''); });
     var att = D.tasks.filter(function (t) { return (isLate(t) || isSoon(t)) && (isMgr() || t.assigned_to === me.id || (t.team && !acked(t, me.id))); }).sort(function (x, y) { return x.due_date.localeCompare(y.due_date); }).slice(0, 5);
     if (att.length) h += '<h2>' + T('attn') + '</h2>' + att.map(function (t) { var l = isLate(t); return '<button class="item ' + (l ? 'late' : 'soon') + '" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(l ? 'urgent' : 'high', T(l ? 'overdue' : 'soon')) + '<span>' + (t.team ? T('whole') : esc(nameOf(t.assigned_to))) + '</span><span>' + I18N.date(t.due_date) + '</span></div></button>'; }).join('');
+    if (isMgr()) { var ov = D.invoices.filter(function (v) { return v.status !== 'paid' && v.due_date && v.due_date < ymd(new Date()); }); if (ov.length) h += '<button class="item late" data-client="' + ov[0].client_id + '" style="margin-top:12px"><div class="t">' + L('Unpaid and overdue', 'فواتير متأخرة') + ': ' + money(ov.reduce(function (s, v) { return s + Number(v.amount || 0); }, 0)) + '</div><div class="m"><span>' + ov.length + ' ' + L('invoices', 'فواتير') + ' · ' + esc(clientName(ov[0].client_id)) + '</span></div></button>'; }
     if (isMgr()) h += '<button class="item" data-act="report" style="margin-top:12px"><div class="t">' + T('report') + '</div><div class="m"><span>' + T('rep.line') + '</span></div></button>';
     h += '<h2>' + T('recent') + '</h2>';
     h += ev.length ? ev.slice(0, 8).map(function (e) { return '<button class="item" data-go="' + e.p + '"><div class="t">' + esc(e.txt) + '</div><div class="m">' + pill(e.st, T(e.k + e.st)) + '<span>' + esc(nameOf(e.who)) + '</span><span>' + I18N.ago(e.at) + '</span></div></button>'; }).join('') : EMPTY();
@@ -454,6 +455,26 @@
     return '<h2>' + L('Links', 'الروابط') + '</h2>' + (lk.length ? lk.map(function (x, i) { return '<div class="lkrow"><a href="' + esc(x.u) + '" target="_blank" rel="noopener"><b>' + esc(x.n || x.u) + '</b><small dir="ltr">' + esc(x.u.replace(/^https?:\/\//, '').slice(0, 42)) + '</small></a>' + (can ? '<button type="button" class="lkdel" data-lkdel="' + i + '" aria-label="' + T('delete') + '">×</button>' : '') + '</div>'; }).join('') : '<div class="calnone">' + L('No links yet.', 'مفيش روابط لسه.') + '</div>') +
       (can ? '<div class="two" style="margin-top:8px"><input id="fln" placeholder="' + L('Name', 'الاسم') + '"><input id="flu" dir="ltr" placeholder="https://"></div><button class="btn" id="lkadd" style="margin-top:8px">' + L('Add link', 'ضيف رابط') + '</button>' : '');
   }
+  /* ---------- payments tracker on a client (managers only) ---------- */
+  function invState(v) { return v.status === 'paid' ? 'paid' : (v.due_date && v.due_date < ymd(new Date()) ? 'late' : 'due'); }
+  function payBlock(c) {
+    if (!isMgr()) return '';
+    var vs = D.invoices.filter(function (v) { return v.client_id === c.id; }).sort(function (a, b) { return (a.status === 'paid') - (b.status === 'paid') || (a.due_date || '9').localeCompare(b.due_date || '9'); });
+    var owed = vs.filter(function (v) { return v.status !== 'paid'; }).reduce(function (s, v) { return s + Number(v.amount || 0); }, 0);
+    var paid = vs.filter(function (v) { return v.status === 'paid'; }).reduce(function (s, v) { return s + Number(v.amount || 0); }, 0);
+    return '<h2>' + L('Payments', 'المدفوعات') + '</h2>' + (vs.length ? '<div class="two3 payk"><div class="kpi red"><b>' + money(owed) + '</b><span>' + L('Waiting', 'مستني') + '</span></div><div class="kpi"><b>' + money(paid) + '</b><span>' + L('Paid', 'اتدفع') + '</span></div></div>' : '') +
+      vs.map(function (v) { var st = invState(v); return '<div class="payrow ' + st + '"><div><div class="t">' + esc(v.title) + '</div><div class="m"><span>' + money(v.amount) + '</span>' + (v.due_date ? '<span>' + I18N.date(v.due_date) + '</span>' : '') + '<span class="paytag">' + (st === 'paid' ? L('Paid', 'اتدفع') : st === 'late' ? L('Overdue', 'متأخرة') : L('Waiting', 'مستني')) + '</span></div></div><button type="button" class="btn ghost paybtn" data-paytog="' + v.id + '">' + (st === 'paid' ? L('Undo', 'تراجع') : L('Mark paid', 'اتدفع')) + '</button><button type="button" class="lkdel" data-paydel="' + v.id + '" aria-label="' + T('delete') + '">×</button></div>'; }).join('') +
+      (vs.length ? '' : '<div class="calnone">' + L('No invoices yet.', 'مفيش فواتير لسه.') + '</div>') +
+      '<div class="two" style="margin-top:8px"><input id="fpt" placeholder="' + L('Invoice title', 'اسم الفاتورة') + '"><input id="fpa" type="number" inputmode="decimal" min="0" placeholder="' + L('Amount', 'المبلغ') + '"></div><div class="row" style="margin-top:8px"><input id="fpd" type="date"><button class="btn" id="payadd">' + L('Add invoice', 'ضيف فاتورة') + '</button></div>';
+  }
+  function bindPay(c, reopen) {
+    var add = $('#payadd'); if (add) add.onclick = function () {
+      var t = f('#fpt').trim(), a = parseFloat(f('#fpa')); if (!t) return $('#fpt').focus(); if (!(a > 0)) return $('#fpa').focus();
+      act(function () { return Store.insert('invoices', { client_id: c.id, title: t.slice(0, 80), amount: a, due_date: f('#fpd') || null, status: 'sent' }); }).then(function () { reopen(true); });
+    };
+    [].slice.call(document.querySelectorAll('#sheetin [data-paytog]')).forEach(function (b) { b.onclick = function () { var v = D.invoices.filter(function (x) { return x.id === b.dataset.paytog; })[0]; if (!v) return; var paid = v.status === 'paid'; act(function () { return Store.update('invoices', v.id, { status: paid ? 'sent' : 'paid', paid_at: paid ? null : new Date().toISOString() }); }).then(function () { reopen(true); }); }; });
+    [].slice.call(document.querySelectorAll('#sheetin [data-paydel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('invoices', b.dataset.paydel); }).then(function () { reopen(true); }); }; });
+  }
   /* ---------- notes log on a client ---------- */
   function notesBlock(c) {
     var ns = D.client_notes.filter(function (n) { return n.client_id === c.id; }).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
@@ -552,11 +573,12 @@
     var ph = (c.phone || '').replace(/[^\d+]/g, ''), wa = ph.replace(/^\+/, '');
     openSheet('<h2>' + esc(c.name) + '</h2><div style="margin-bottom:8px">' + pill(c.status, T('cs.' + c.status)) + '</div>' + (c.contact ? '<p>' + esc(c.contact) + '</p>' : '') + (c.email ? '<p dir="ltr" style="text-align:start">' + esc(c.email) + '</p>' : '') + (c.notes ? '<p style="color:var(--ash)">' + esc(c.notes) + '</p>' : '') +
       '<div class="acts">' + (ph ? '<a class="btn" href="tel:' + esc(ph) + '">' + T('f.phone') + '</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '">WhatsApp</a>' : '') + '<button class="btn" id="ed">' + T('edit') + '</button></div>' +
-      linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
+      payBlock(c) + linksBlock(c, isMgr() || c.created_by === me.id) + notesBlock(c) +
       '<h2>' + T('cl.members') + '</h2>' + (function () { var ms = membersOf(id); return (ms.length ? '<div class="avl">' + ms.map(function (p) { return '<button class="pk on" data-prof="' + p.id + '">' + avatar(p) + '<span>' + esc(p.name || p.email) + '<small>' + teamLabel(p.team) + '</small></span></button>'; }).join('') + '</div>' : '<div class="calnone">' + T('cl.nomem') + '</div>') + (isMgr() ? '<button class="btn" data-cmopen="' + id + '" style="margin-top:10px">' + T('cl.manage') + '</button>' : ''); })() +
       '<h2>' + T('cl.tasks') + '</h2>' + (function () { var ts = D.tasks.filter(function (t) { return t.client_id === id; }); return (ts.length ? ts.map(function (t) { return '<button class="item" data-task="' + t.id + '"><div class="t">' + esc(t.title) + '</div><div class="m">' + pill(t.status, T('st.' + t.status)) + '<span>' + esc(t.team ? T('whole') : nameOf(t.assigned_to)) + '</span>' + (t.due_date ? '<span>' + I18N.date(t.due_date) + '</span>' : '') + '</div></button>'; }).join('') : '<div class="calnone">' + T('cl.notask') + '</div>') + '<button class="btn" data-newtask="' + id + '" style="margin-top:10px">' + T('cl.addtask') + '</button>'; })());
     $('#ed').onclick = function () { clientForm(c); };
     bindTaskExtras(c, id, isMgr() || c.created_by === me.id, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; }, 'clients');
+    bindPay(c, function (keep) { var y = $('#sheet').scrollTop; clientDetail(id); if (keep) $('#sheet').scrollTop = y; });
     var na = $('#cnadd'); if (na) { var gon = function () { var v = f('#fcn').trim(); if (!v) return; act(function () { return Store.insert('client_notes', { client_id: id, body: v.slice(0, 600) }); }).then(function () { var y = $('#sheet').scrollTop; clientDetail(id); $('#sheet').scrollTop = y; }); }; na.onclick = gon; $('#fcn').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gon(); } }; }
     [].slice.call(document.querySelectorAll('#sheetin [data-cndel]')).forEach(function (b) { b.onclick = function () { act(function () { return Store.remove('client_notes', b.dataset.cndel); }).then(function () { clientDetail(id); }); }; });
   }

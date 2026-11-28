@@ -329,3 +329,16 @@ html:not([data-theme=dark]) body{background:#fff!important}
 .cnh{display:flex;align-items:center;gap:10px;margin-bottom:3px}
 .cnh small{color:var(--ash);flex:1}
 .cnh .lkdel{width:28px;height:28px;font-size:17px}
+/* v85: payments tracker */
+.payrow{display:flex;align-items:center;gap:10px;padding:11px 0}
+.payrow>div{flex:1;min-width:0}
+.payrow .paytag{font-weight:800}
+.payrow.late .paytag{color:#E11827}
+.payrow.paid .t,.payrow.paid .m{opacity:.5}
+.paybtn{flex:none;padding:8px 14px!important;font-size:13px!important;min-height:0!important}
+.payk{margin-bottom:6px}
+.payrow .paybtn{width:auto!important;flex:none!important;white-space:nowrap}
+.payrow>div:first-child{flex:1 1 0!important;min-width:0}
+.payk{grid-template-columns:1fr 1fr!important}
+.payk .kpi b{font-size:20px!important;white-space:nowrap}
+.payrow .m{display:flex;flex-wrap:wrap;gap:4px 10px}
