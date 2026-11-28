@@ -127,11 +127,13 @@
     var seen = {}; return Promise.all(ids.filter(function (x) { if (!x || x === me.id || seen[x]) return false; seen[x] = 1; return true; }).map(function (uid) { return Store.insert('notifications', { user_id: uid, kind: kind, ref: ref, subject: subject || '', actor: me.id, read: false }); }));
   }
   var unread = function () { return D.notifications.filter(function (n) { return n.user_id === me.id && !n.read; }); };
-  function bell() { var n = unread().length, b = $('#belln'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n; $('#burgerdot').hidden = !n; }
+  var overdueInv = function () { return isMgr() ? D.invoices.filter(function (v) { return v.status !== 'paid' && v.due_date && v.due_date < ymd(new Date()); }) : []; };
+  function bell() { var n = unread().length + overdueInv().length, b = $('#belln'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n; $('#burgerdot').hidden = !n; }
   function notifText(n) { var sub = n.subject; if (n.kind === 'leave_req') sub = T('lt.' + n.subject); else if (n.kind === 'leave_decided' || n.kind === 'resign_decided' || n.kind === 'expense_decided') sub = T('d.' + n.subject); return esc(nameOf(n.actor)) + ' ' + T('n.' + n.kind) + (sub ? ': ' + esc(sub) : ''); }
   function notifCenter() {
     var rows = D.notifications.filter(function (n) { return n.user_id === me.id; }).slice(0, 40);
-    openSheet('<h2>' + T('bell') + '</h2>' + (rows.length ? rows.map(function (n) { return '<button class="item' + (n.read ? '' : ' unread') + '" data-nref="' + esc(n.ref || 'home') + '"><div class="t">' + notifText(n) + '</div><div class="m"><span>' + I18N.ago(n.created_at) + '</span></div></button>'; }).join('') + (unread().length ? '<button class="btn ghost" id="nread">' + T('n.markread') + '</button>' : '') : EMPTY()));
+    var ovh = overdueInv().map(function (v) { return '<button class="item unread" data-client="' + v.client_id + '"><div class="t">' + L('Invoice overdue', 'فاتورة متأخرة') + ': ' + esc(v.title) + ' · ' + money(v.amount) + '</div><div class="m"><span>' + esc(clientName(v.client_id)) + '</span><span>' + I18N.date(v.due_date) + '</span></div></button>'; }).join('');
+    openSheet('<h2>' + T('bell') + '</h2>' + ovh + (rows.length ? rows.map(function (n) { return '<button class="item' + (n.read ? '' : ' unread') + '" data-nref="' + esc(n.ref || 'home') + '"><div class="t">' + notifText(n) + '</div><div class="m"><span>' + I18N.ago(n.created_at) + '</span></div></button>'; }).join('') + (unread().length ? '<button class="btn ghost" id="nread">' + T('n.markread') + '</button>' : '') : (ovh ? '' : EMPTY())));
     if ($('#nread')) $('#nread').onclick = function () { act(function () { return Promise.all(unread().map(function (n) { return Store.update('notifications', n.id, { read: true }); })); }).then(closeSheet); };
   }
   $('#bell').onclick = function () { closeMenu(); notifCenter(); };
@@ -200,7 +202,8 @@
     names.forEach(function (n, i) { D[n] = res[i]; });
   }
   window.addEventListener('offline', function () { toast(T('offline')); });
-  async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(T('fail')); return false; } }
+  window.addEventListener('online', function () { toast(L('Back online', 'رجع الإنترنت')); });
+  async function act(fn, okMsg) { try { await fn(); await load(); render(0); if (okMsg) toast(T(okMsg)); return true; } catch (e) { toast(navigator.onLine === false ? L('No internet. Nothing was saved.', 'مفيش إنترنت. محصلش حفظ.') : T('fail')); return false; } }
 
   /* ---------- panels ---------- */
   var EMPTY = function () { return '<div class="empty e-' + (ORDER[cur] || 'home') + '"><svg class="emptyeye" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="24" cy="24" r="6" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/></svg><div>' + EMPTYTXT() + '</div></div>'; };
