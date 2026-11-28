@@ -342,3 +342,4 @@ html:not([data-theme=dark]) body{background:#fff!important}
 .payk{grid-template-columns:1fr 1fr!important}
 .payk .kpi b{font-size:20px!important;white-space:nowrap}
 .payrow .m{display:flex;flex-wrap:wrap;gap:4px 10px}
+html .authwings,html .bootin img.wings{opacity:1!important;filter:none!important}
